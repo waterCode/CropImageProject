@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">CropImageProject</string>
+    <string name="TAG">CropImageView</string>
 </resources>

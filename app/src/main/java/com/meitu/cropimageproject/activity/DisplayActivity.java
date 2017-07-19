@@ -1,6 +1,7 @@
 package com.meitu.cropimageproject.activity;
 
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -25,12 +26,16 @@ public class DisplayActivity extends AppCompatActivity {
         setContentView(R.layout.display_iamge_activity);
         mNeedCropView = (CropImageView) findViewById(R.id.crop_photo);
 
-        Intent intent = getIntent();
+
+        Drawable drawable = getResources().getDrawable(R.drawable.screenshot);
+        mNeedCropView.setImageDrawable(drawable);
+        //mNeedCropView.setDrawable(drawable);
+        /*Intent intent = getIntent();
 
         uri = intent.getParcelableExtra("uri");
         if(uri !=null) {
-            Glide.with(this).load(uri).into(mNeedCropView );
-        }
+            Glide.with(this).load(uri).into(mNeedCropView);
+        }*/
     }
 
 
