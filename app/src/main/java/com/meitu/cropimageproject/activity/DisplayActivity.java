@@ -17,13 +17,13 @@ import com.meitu.cropimageproject.view.CropImageView;
 
 public class DisplayActivity extends AppCompatActivity {
     private Uri uri;
-    private ImageView mNeedCropView;
+    private CropImageView mNeedCropView;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.display_iamge_activity);
-        mNeedCropView = (ImageView) findViewById(R.id.crop_photo);
+        mNeedCropView = (CropImageView) findViewById(R.id.crop_photo);
 
         Intent intent = getIntent();
 
