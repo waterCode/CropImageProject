@@ -1,16 +1,16 @@
 package com.meitu.cropimageproject.activity;
 
-import android.content.Intent;
-import android.graphics.drawable.Drawable;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
-import android.widget.ImageView;
 
-import com.bumptech.glide.Glide;
 import com.meitu.cropimageproject.R;
+import com.meitu.cropimageproject.util.ImageLoadUtil;
 import com.meitu.cropimageproject.view.CropImageView;
+
+import java.io.FileNotFoundException;
 
 /**
  * Created by zmc on 2017/7/18.
@@ -25,10 +25,16 @@ public class DisplayActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.display_iamge_activity);
         mNeedCropView = (CropImageView) findViewById(R.id.crop_photo);
+        uri = getIntent().getParcelableExtra("uri");
 
+        Bitmap bitmap = null;
+        try {
+            bitmap = ImageLoadUtil.loadImage(getContentResolver(), uri);
+            mNeedCropView.setImageBitmap(bitmap);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
 
-        Drawable drawable = getResources().getDrawable(R.drawable.screenshot);
-        mNeedCropView.setImageDrawable(drawable);
         //mNeedCropView.setDrawable(drawable);
         /*Intent intent = getIntent();
 
