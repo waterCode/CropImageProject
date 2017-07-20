@@ -27,22 +27,8 @@ public class DisplayActivity extends AppCompatActivity {
         setContentView(R.layout.display_iamge_activity);
         mNeedCropView = (CropImageView) findViewById(R.id.crop_photo);
         uri = getIntent().getParcelableExtra("uri");
+        mNeedCropView.setImageURI(uri);
 
-        Bitmap bitmap = null;
-        try {
-            bitmap = ImageLoadUtil.loadImage(getContentResolver(), uri);
-            mNeedCropView.setImageBitmap(bitmap);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        //mNeedCropView.setDrawable(drawable);
-        /*Intent intent = getIntent();
-
-        uri = intent.getParcelableExtra("uri");
-        if(uri !=null) {
-            Glide.with(this).load(uri).into(mNeedCropView);
-        }*/
     }
 
     public void onClick(View v) {

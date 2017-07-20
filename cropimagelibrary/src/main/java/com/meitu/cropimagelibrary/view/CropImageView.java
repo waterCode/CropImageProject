@@ -1,5 +1,6 @@
 package com.meitu.cropimagelibrary.view;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -10,6 +11,7 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -18,6 +20,9 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 
 import com.meitu.cropimagelibrary.info.ImageInfo;
+import com.meitu.cropimagelibrary.util.ImageLoadUtil;
+
+import java.io.FileNotFoundException;
 
 /**
  * Created by zmc on 2017/7/18.
@@ -264,24 +269,18 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         canvas.drawRect(mCropRectF.left + halfLineWidth, mCropRectF.top - halfLineWidth, mCropRectF.right - halfLineWidth, mCropRectF.bottom + halfLineWidth, mWhiteCropPaint);
     }
 
-    public void setBitmapUri(String uri) {
-        Bitmap bitmap = getBitmapFromUri(uri);
-        setBitmap(bitmap);
-    }
 
-    private Bitmap getBitmapFromUri(String uri) {
-        return null;
-    }
+
 
 
     public void setBitmap(Bitmap bitmap) {
         setImageBitmap(bitmap);
         requestLayout();//重新layout刷新布局
+        invalidate();
     }
 
     public void setDrawable(Drawable drawable) {
         setImageDrawable(drawable);
-
         requestLayout();
         invalidate();
     }
