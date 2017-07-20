@@ -18,6 +18,7 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 
 import com.meitu.cropimagelibrary.info.ImageInfo;
+import com.meitu.cropimagelibrary.util.RotationGestureDetector;
 
 /**
  * Created by zmc on 2017/7/18.
@@ -26,15 +27,19 @@ import com.meitu.cropimagelibrary.info.ImageInfo;
 public class CropImageView extends android.support.v7.widget.AppCompatImageView {
 
 
-    private static final String DEFAULT_BACKGROUND_COLOR_ID = "#99000000";
+    private static final String DEFAULT_BACKGROUND_COLOR_ID = "#99000000";//超过裁剪部分的矩形框
+
     private static final String TAG = "CropImageView";
+
+    private boolean mScaleEnable = false;
+    private boolean mRotateEnable = true;
 
 
     private Matrix mBaseMatrix = new Matrix();
     private Matrix mDisplayMatrix = new Matrix();
 
     private RectF mCropRectF = new RectF();//裁剪框矩形区域
-    private RectF mBitmapRectF = new RectF();
+    private RectF mBitmapRectF = new RectF();//当前的矩形区域
 
     private Paint mTransParentLayerPaint;//暗色区域背景
     private Paint mWhiteCropPaint;
@@ -42,6 +47,9 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     private ScaleGestureDetector mScaleGestureDetector;
     private GestureDetector mGestureDetector;
+    private RotationGestureDetector mRotationGestureDetector;
+
+    private float mMidPntX, mMidPntY;
 
 
     private float[] mMatrixValue = new float[9];
@@ -74,19 +82,32 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
         mScaleGestureDetector = new ScaleGestureDetector(getContext(), new ScaleListener());
         mGestureDetector = new GestureDetector(getContext(), new GestureListener());
+        mRotationGestureDetector = new RotationGestureDetector(new RotationListener());
+
     }
 
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        mScaleGestureDetector.onTouchEvent(event);
+
+        if (event.getPointerCount() > 1) {
+            mMidPntX = (event.getX(0) + event.getX(1)) / 2;//算出中心点
+            mMidPntY = (event.getY(0) + event.getY(1)) / 2;
+        }
+
+        if (mScaleEnable) {
+            mScaleGestureDetector.onTouchEvent(event);
+        }
+        if(mRotateEnable) {
+            mRotationGestureDetector.onTouchEvent(event);
+        }
+
         if (!mScaleGestureDetector.isInProgress()) {
             //检测拖动
             mGestureDetector.onTouchEvent(event);
         }
 
-        int action = event.getAction();
-        if (action == MotionEvent.ACTION_UP) {//松手动手
+        if ((event.getAction() & MotionEvent.ACTION_MASK) == MotionEvent.ACTION_UP) {//松手动手
             checkImagePosition();
         }
         return true;
@@ -113,19 +134,11 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         } else {
 
             float dx = 0, dy = 0;
-            //检查其他4个边界，最多有两个越界
-            if (mBitmapRectF.left > mCropRectF.left) {//左边界越界
-                dx = mCropRectF.left - mBitmapRectF.left;
+            if (!mBitmapRectF.contains(mCropRectF)){//有越界。需要移动
+               dx =  mCropRectF.centerX()-mBitmapRectF.centerX();
+                dy = mCropRectF.centerY() - mBitmapRectF.centerY();
             }
-            if (mBitmapRectF.right < mCropRectF.right) {//右边界越界
-                dx = mCropRectF.right - mBitmapRectF.right;
-            }
-            if (mBitmapRectF.top > mCropRectF.top) {//上边界越界
-                dy = mCropRectF.top - mBitmapRectF.top;
-            }
-            if (mBitmapRectF.bottom < mCropRectF.bottom) {//下边界越界
-                dy = mCropRectF.bottom - mBitmapRectF.bottom;
-            }
+
 
             moveImage(dx, dy);
         }
@@ -301,6 +314,12 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         Log.d(TAG, "Drawable width " + getDrawable().getIntrinsicWidth() + "Drawable height" + getDrawable().getIntrinsicHeight());
         Log.d(TAG, "BitmapRect " + mBitmapRectF.width() + " Bitmap left " + mBitmapRectF.left);
 
+        RectF r = new RectF(0,0,100,100);
+        Matrix m = new Matrix();
+        m.setRotate(100);
+        m.mapRect(r);
+
+        Log.d(TAG,"rotaeRectWidth"+r.width());
     }
 
     private class GestureListener extends GestureDetector.SimpleOnGestureListener {
@@ -338,4 +357,19 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         }
     }
 
+    private class RotationListener extends RotationGestureDetector.SimpleOnRotationGestureListener{
+
+        @Override
+        public boolean onRotation(RotationGestureDetector rotationDetector) {
+            float angle = rotationDetector.getAngle();
+            postRotate(angle,mMidPntX,mMidPntY);
+            return super.onRotation(rotationDetector);
+        }
+    }
+
+    private void postRotate(float angle, float x, float y) {
+        mDisplayMatrix.postRotate(angle,x,y);
+        setImageMatrix(mDisplayMatrix);
+        invalidate();
+    }
 }

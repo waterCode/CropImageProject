@@ -27,7 +27,7 @@ public class DisplayActivity extends AppCompatActivity {
         setContentView(R.layout.display_iamge_activity);
         mNeedCropView = (CropImageView) findViewById(R.id.crop_photo);
         uri = getIntent().getParcelableExtra("uri");
-        //mNeedCropView.setImageURI(uri);
+        mNeedCropView.setImageURI(uri);
 
     }
 
