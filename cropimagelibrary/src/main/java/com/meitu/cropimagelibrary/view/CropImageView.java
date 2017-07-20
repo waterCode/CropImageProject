@@ -1,6 +1,5 @@
 package com.meitu.cropimagelibrary.view;
 
-import android.content.ContentResolver;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -11,7 +10,6 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -20,9 +18,6 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 
 import com.meitu.cropimagelibrary.info.ImageInfo;
-import com.meitu.cropimagelibrary.util.ImageLoadUtil;
-
-import java.io.FileNotFoundException;
 
 /**
  * Created by zmc on 2017/7/18.
@@ -100,9 +95,9 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     @Override
     public void setScaleType(ScaleType scaleType) {
-        if(scaleType != ScaleType.MATRIX){
+        if (scaleType != ScaleType.MATRIX) {
             throw new IllegalArgumentException("scaleType must be matrix");
-        }else {
+        } else {
             super.setScaleType(scaleType);
         }
     }
@@ -173,6 +168,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     /**
      * 移动Bitmap的位置
+     *
      * @param dx x轴移动的距离
      * @param dy y轴移动的距离
      */
@@ -190,14 +186,15 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         // TODO: 2017/7/19 这里表示高一定大于宽
         mCropRectF.set(0, (mThisHeight - mThisWidth) / 2, mThisWidth, (mThisHeight + mThisWidth) / 2);//这里初始化好矩形框框的范围
 
-        getProperMatrix(mBaseMatrix);//获取矩阵，用来设置矩阵
-        //拷贝矩阵
-        mDisplayMatrix.set(mBaseMatrix);
-        setImageMatrix(mDisplayMatrix);
+        if (getDrawable() != null) {
+            getProperMatrix(mBaseMatrix);//获取矩阵，用来设置矩阵
+            //拷贝矩阵
+            mDisplayMatrix.set(mBaseMatrix);
+            setImageMatrix(mDisplayMatrix);
 
-        //设置化映射矩阵
-        mBitmapRectF.set(0, 0, getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight());
-
+            //设置化映射矩阵
+            mBitmapRectF.set(0, 0, getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight());
+        }
     }
 
     private void getBitmapRectf(Matrix displayMatrix) {
@@ -229,7 +226,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         if (drawableRatio > cropRectRatio) {//表示是长图，就是高大于宽
             //按照宽的比例来扩大
             scale = cropRectWidth / intrinsicWidth;
-            moveY = (getMeasuredHeight() - intrinsicHeight * scale)/2;//视图的高度减去图片的扩大后的高度/2
+            moveY = (getMeasuredHeight() - intrinsicHeight * scale) / 2;//视图的高度减去图片的扩大后的高度/2
         } else {
             //按照高的比例来扩大
             scale = cropRectHeight / intrinsicHeight;
@@ -242,12 +239,14 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     @Override
     protected void onDraw(Canvas canvas) {
-        logMatrixInfo(getImageMatrix());
         super.onDraw(canvas);
         drawTransParentLayer(canvas);
         drawCropRect(canvas);
-        if (mImageInfo == null) {//第一次才需要记录，最开始高宽和长度，和放大倍数
-            SetImageInfo();
+        if (getDrawable() != null) {
+            logMatrixInfo(getImageMatrix());
+            if (mImageInfo == null) {//第一次才需要记录，最开始高宽和长度，和放大倍数
+                SetImageInfo();
+            }
         }
     }
 
@@ -268,9 +267,6 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         float halfLineWidth = mWhiteCropPaint.getStrokeWidth() * 0.5f;
         canvas.drawRect(mCropRectF.left + halfLineWidth, mCropRectF.top - halfLineWidth, mCropRectF.right - halfLineWidth, mCropRectF.bottom + halfLineWidth, mWhiteCropPaint);
     }
-
-
-
 
 
     public void setBitmap(Bitmap bitmap) {
