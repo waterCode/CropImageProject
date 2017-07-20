@@ -8,10 +8,8 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.Nullable;
-import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -40,7 +38,7 @@ public class CropImageView extends ImageView {
     private Matrix mDisplayMatrix = new Matrix();
 
     private RectF mCropRectf = new RectF();//裁剪框矩形区域
-    private RectF mBitmapRectf;
+    private RectF mBitmapRectf = new RectF();
 
     private Paint mTransParentLayerPaint;//暗色区域背景
     private Paint mWhiteCropPaint;
@@ -78,7 +76,7 @@ public class CropImageView extends ImageView {
         mWhiteCropPaint.setStyle(Paint.Style.STROKE);//what？？
 
         mScaleGestureDector = new ScaleGestureDetector(getContext(), new ScaleListener());
-        mGestureDetector = new GestureDetector(getContext(),new GestureListener());
+        mGestureDetector = new GestureDetector(getContext(), new GestureListener());
     }
 
 
@@ -93,67 +91,57 @@ public class CropImageView extends ImageView {
             }*/
         }
 
-        int action = MotionEventCompat.getActionMasked(event);
-        if (action == MotionEvent.ACTION_CANCEL) {//松手动手
+        int action = event.getAction();
+        if (action == MotionEvent.ACTION_UP) {//松手动手
             checkImagePosition();
         }
         return true;
     }
 
 
+    /**
+     * 检车是否越界
+     */
     private void checkImagePosition() {
         Log.d(TAG, "checkImagePosition");
-        float[] values = new float[9];
-        mDisplayMatrix.getValues(values);
-        float scaleX = values[Matrix.MSCALE_X];
-        float scaleY = values[Matrix.MSCALE_Y];
-
-        Drawable image = getDrawable();
-        /*if (scaleX < 1 || scaleY < 1) {//缩小到太小
+        getBitmapRectf(mDisplayMatrix);//拿到此时图片位置
+        if (mBitmapRectf.width() < mCropRectf.width() || mBitmapRectf.height() < mCropRectf.height()) {//缩小到太小回到初始化
             resetImage();
-        }*/
+        }else {
 
+            float dx=0, dy=0;
+            //检查其他4个边界，最多有两个越界
+            if (mBitmapRectf.left > mCropRectf.left) {//左边界越界
+                dx = mCropRectf.left - mBitmapRectf.left;
+            }
+            if (mBitmapRectf.right < mCropRectf.right) {//右边界越界
+                dx = mCropRectf.right - mBitmapRectf.right;
+            }
+            if (mBitmapRectf.top > mCropRectf.top) {//上边界越界
+                dy = mCropRectf.top - mBitmapRectf.top;
+            }
+            if (mBitmapRectf.bottom < mCropRectf.bottom) {
+                dy = mCropRectf.bottom - mBitmapRectf.bottom;
+            }
+
+            moveImage(dx,dy);
+        }
     }
 
     private void resetImage() {
+        Log.d(TAG, "resetImage");
         mDisplayMatrix.set(mBaseMatrix);
         setImageMatrix(mDisplayMatrix);
         invalidate();
     }
 
 
-    /**
-     * 检测滑动，用来实现拖动视图
-     *
-     * @param event
-     */
-    private void detectMove(MotionEvent event) {
-        int action = event.getAction();
-        switch (action) {
-
-            case MotionEvent.ACTION_DOWN: {//记录开始的点
-                event.getActionIndex();
-                mLastPointX = event.getX();//记录最后一个点
-                mLastPointY = event.getY();
-                break;
-            }
-
-            case MotionEvent.ACTION_MOVE: {
-                // TODO: 2017/7/19 pointerxIndex  out of range
-                float x = event.getX();
-                float y = event.getY();
-                float dx = x - mLastPointX;//拿到拖动距离
-                float dy = y - mLastPointY;
-                mDisplayMatrix.postTranslate(dx, dy);
-                setImageMatrix(mDisplayMatrix);
-                invalidate();
-
-                mLastPointX = x;
-                mLastPointY = y;
-            }
-        }
 
 
+    private void moveImage(float dx, float dy) {
+        mDisplayMatrix.postTranslate(dx, dy);
+        setImageMatrix(mDisplayMatrix);
+        invalidate();
     }
 
     @Override
@@ -168,12 +156,15 @@ public class CropImageView extends ImageView {
         //拷贝矩阵
         mDisplayMatrix.set(mBaseMatrix);
         setImageMatrix(mDisplayMatrix);
-        MapBitmapRectf(mDisplayMatrix);
+
+        //设置化映射矩阵
+        mBitmapRectf.set(0, 0, getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight());
+
     }
 
-    private void MapBitmapRectf(Matrix displayMatrix) {
+    private void getBitmapRectf(Matrix displayMatrix) {
         if (getDrawable() != null) {
-            mBitmapRectf = new RectF(0, 0, getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight());
+            mBitmapRectf.set(0, 0, getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight());
             displayMatrix.mapRect(mBitmapRectf);
         }
     }
@@ -298,9 +289,7 @@ public class CropImageView extends ImageView {
 
     private void onScroll(float distanceX, float distanceY) {
         Log.d(TAG, "onScroll dx " + distanceX + "dy" + distanceY);
-        mDisplayMatrix.postTranslate(-distanceX, -distanceY);
-        setImageMatrix(mDisplayMatrix);
-        invalidate();
+        moveImage(-distanceX, -distanceY);
     }
 
 
