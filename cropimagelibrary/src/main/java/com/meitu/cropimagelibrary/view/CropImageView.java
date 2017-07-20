@@ -24,7 +24,7 @@ import com.meitu.cropimagelibrary.info.ImageInfo;
  * Created by zmc on 2017/7/18.
  */
 
-public class CropImageView extends ImageView {
+public class CropImageView extends android.support.v7.widget.AppCompatImageView {
 
 
     private static final String DEFAULT_BACKGROUND_COLOR_ID = "#99000000";
@@ -34,14 +34,14 @@ public class CropImageView extends ImageView {
     private Matrix mBaseMatrix = new Matrix();
     private Matrix mDisplayMatrix = new Matrix();
 
-    private RectF mCropRectf = new RectF();//裁剪框矩形区域
-    private RectF mBitmapRectf = new RectF();
+    private RectF mCropRectF = new RectF();//裁剪框矩形区域
+    private RectF mBitmapRectF = new RectF();
 
     private Paint mTransParentLayerPaint;//暗色区域背景
     private Paint mWhiteCropPaint;
 
 
-    private ScaleGestureDetector mScaleGestureDector;
+    private ScaleGestureDetector mScaleGestureDetector;
     private GestureDetector mGestureDetector;
 
 
@@ -73,20 +73,17 @@ public class CropImageView extends ImageView {
         mWhiteCropPaint.setStrokeWidth(1);//设置填充宽度
         mWhiteCropPaint.setStyle(Paint.Style.STROKE);//what？？
 
-        mScaleGestureDector = new ScaleGestureDetector(getContext(), new ScaleListener());
+        mScaleGestureDetector = new ScaleGestureDetector(getContext(), new ScaleListener());
         mGestureDetector = new GestureDetector(getContext(), new GestureListener());
     }
 
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        mScaleGestureDector.onTouchEvent(event);
-        if (!mScaleGestureDector.isInProgress()) {
+        mScaleGestureDetector.onTouchEvent(event);
+        if (!mScaleGestureDetector.isInProgress()) {
             //检测拖动
             mGestureDetector.onTouchEvent(event);
-            /*if (event.getPointerCount() == 1) {
-                detectMove(event);
-            }*/
         }
 
         int action = event.getAction();
@@ -103,23 +100,23 @@ public class CropImageView extends ImageView {
     private void checkImagePosition() {
         Log.d(TAG, "checkImagePosition");
         getBitmapRectf(mDisplayMatrix);//拿到此时图片位置
-        if (mBitmapRectf.width() < mCropRectf.width() || mBitmapRectf.height() < mCropRectf.height()) {//缩小到太小回到初始化
+        if (mBitmapRectF.width() < mCropRectF.width() || mBitmapRectF.height() < mCropRectF.height()) {//缩小到太小回到初始化
             resetImage();
         } else {
 
             float dx = 0, dy = 0;
             //检查其他4个边界，最多有两个越界
-            if (mBitmapRectf.left > mCropRectf.left) {//左边界越界
-                dx = mCropRectf.left - mBitmapRectf.left;
+            if (mBitmapRectF.left > mCropRectF.left) {//左边界越界
+                dx = mCropRectF.left - mBitmapRectF.left;
             }
-            if (mBitmapRectf.right < mCropRectf.right) {//右边界越界
-                dx = mCropRectf.right - mBitmapRectf.right;
+            if (mBitmapRectF.right < mCropRectF.right) {//右边界越界
+                dx = mCropRectF.right - mBitmapRectF.right;
             }
-            if (mBitmapRectf.top > mCropRectf.top) {//上边界越界
-                dy = mCropRectf.top - mBitmapRectf.top;
+            if (mBitmapRectF.top > mCropRectF.top) {//上边界越界
+                dy = mCropRectF.top - mBitmapRectF.top;
             }
-            if (mBitmapRectf.bottom < mCropRectf.bottom) {
-                dy = mCropRectf.bottom - mBitmapRectf.bottom;
+            if (mBitmapRectF.bottom < mCropRectF.bottom) {//下边界越界
+                dy = mCropRectF.bottom - mBitmapRectF.bottom;
             }
 
             moveImage(dx, dy);
@@ -127,6 +124,9 @@ public class CropImageView extends ImageView {
     }
 
 
+    /**
+     * 设置成水平镜像
+     */
     public void setHorizontalMirror() {
         Log.d(TAG, "setHorizontalMirror");
         updateImageCenter();
@@ -136,14 +136,20 @@ public class CropImageView extends ImageView {
         invalidate();
     }
 
+    /**
+     * 更新图片的中心点，可用来镜像的时候使用
+     */
     private void updateImageCenter() {
         getBitmapRectf(mDisplayMatrix);//重新获取以下区域
-        float x = (mBitmapRectf.right + mBitmapRectf.left) / 2;
-        float y = (mBitmapRectf.bottom + mBitmapRectf.top) / 2;
+        float x = (mBitmapRectF.right + mBitmapRectF.left) / 2;
+        float y = (mBitmapRectF.bottom + mBitmapRectF.top) / 2;
         mImageCenterPoint.set(x, y);
 
     }
 
+    /**
+     * 复原Image到最初的位置
+     */
     private void resetImage() {
         Log.d(TAG, "resetImage");
         mDisplayMatrix.set(mBaseMatrix);
@@ -152,6 +158,11 @@ public class CropImageView extends ImageView {
     }
 
 
+    /**
+     * 移动Bitmap的位置
+     * @param dx x轴移动的距离
+     * @param dy y轴移动的距离
+     */
     private void moveImage(float dx, float dy) {
         mDisplayMatrix.postTranslate(dx, dy);
         setImageMatrix(mDisplayMatrix);
@@ -164,7 +175,7 @@ public class CropImageView extends ImageView {
         int mThisWidth = getMeasuredWidth();
         int mThisHeight = getMeasuredHeight();
         // TODO: 2017/7/19 这里表示高一定大于宽
-        mCropRectf.set(0, (mThisHeight - mThisWidth) / 2, mThisWidth, (mThisHeight + mThisWidth) / 2);//这里初始化好矩形框框的范围
+        mCropRectF.set(0, (mThisHeight - mThisWidth) / 2, mThisWidth, (mThisHeight + mThisWidth) / 2);//这里初始化好矩形框框的范围
 
         getProperMatrix(mBaseMatrix);//获取矩阵，用来设置矩阵
         //拷贝矩阵
@@ -172,14 +183,14 @@ public class CropImageView extends ImageView {
         setImageMatrix(mDisplayMatrix);
 
         //设置化映射矩阵
-        mBitmapRectf.set(0, 0, getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight());
+        mBitmapRectF.set(0, 0, getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight());
 
     }
 
     private void getBitmapRectf(Matrix displayMatrix) {
         if (getDrawable() != null) {
-            mBitmapRectf.set(0, 0, getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight());
-            displayMatrix.mapRect(mBitmapRectf);
+            mBitmapRectF.set(0, 0, getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight());
+            displayMatrix.mapRect(mBitmapRectF);
         }
     }
 
@@ -195,8 +206,8 @@ public class CropImageView extends ImageView {
         float intrinsicHeight = drawable.getIntrinsicHeight();
         float drawableRatio = intrinsicHeight / intrinsicWidth;//图片的高/宽 比例
 
-        float cropRectWidth = mCropRectf.width();
-        float cropRectHeight = mCropRectf.height();
+        float cropRectWidth = mCropRectF.width();
+        float cropRectHeight = mCropRectF.height();
         float cropRectRatio = cropRectHeight / cropRectWidth;
 
         //
@@ -205,12 +216,12 @@ public class CropImageView extends ImageView {
         if (drawableRatio > cropRectRatio) {//表示是长图，就是高大于宽
             //按照宽的比例来扩大
             scale = cropRectWidth / intrinsicWidth;
-            moveY = mCropRectf.top;
+            moveY = mCropRectF.top;
         } else {
             //按照高的比例来扩大
             scale = cropRectHeight / intrinsicHeight;
             moveX = (cropRectWidth - scale * intrinsicWidth) / 2;
-            moveY = mCropRectf.top;
+            moveY = mCropRectF.top;
         }
         displayMatrix.postScale(scale, scale);//设置恰当的放大倍数
         displayMatrix.postTranslate(moveX, moveY);
@@ -228,21 +239,21 @@ public class CropImageView extends ImageView {
     }
 
     private void SetImageInfo() {
-        Matrix matirx = getImageMatrix();
-        matirx.getValues(mMatrixValue);
+        Matrix matrix = getImageMatrix();
+        matrix.getValues(mMatrixValue);
         mImageInfo = new ImageInfo(getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight(), mMatrixValue[Matrix.MSCALE_X]);
     }
 
     private void drawTransParentLayer(Canvas canvas) {
         Rect r = new Rect();
         getLocalVisibleRect(r);
-        canvas.drawRect(r.left, r.top, r.right, mCropRectf.top, mTransParentLayerPaint);
-        canvas.drawRect(r.left, mCropRectf.bottom, r.right, r.bottom, mTransParentLayerPaint);
+        canvas.drawRect(r.left, r.top, r.right, mCropRectF.top, mTransParentLayerPaint);
+        canvas.drawRect(r.left, mCropRectF.bottom, r.right, r.bottom, mTransParentLayerPaint);
     }
 
     private void drawCropRect(Canvas canvas) {
         float halfLineWidth = mWhiteCropPaint.getStrokeWidth() * 0.5f;
-        canvas.drawRect(mCropRectf.left + halfLineWidth, mCropRectf.top - halfLineWidth, mCropRectf.right - halfLineWidth, mCropRectf.bottom + halfLineWidth, mWhiteCropPaint);
+        canvas.drawRect(mCropRectF.left + halfLineWidth, mCropRectF.top - halfLineWidth, mCropRectF.right - halfLineWidth, mCropRectF.bottom + halfLineWidth, mWhiteCropPaint);
     }
 
     public void setBitmapUri(String uri) {
@@ -253,6 +264,7 @@ public class CropImageView extends ImageView {
     private Bitmap getBitmapFromUri(String uri) {
         return null;
     }
+
 
     public void setBitmap(Bitmap bitmap) {
         setImageBitmap(bitmap);
@@ -284,7 +296,7 @@ public class CropImageView extends ImageView {
         Log.d(TAG, "SCALEX：" + mMatrixValue[Matrix.MSCALE_X] + "ScaleY: " + mMatrixValue[Matrix.MSCALE_Y] + "transX "
                 + mMatrixValue[Matrix.MTRANS_X] + " transY " + mMatrixValue[Matrix.MTRANS_Y]);
         Log.d(TAG, "Drawable width " + getDrawable().getIntrinsicWidth() + "Drawable height" + getDrawable().getIntrinsicHeight());
-        Log.d(TAG, "BitmapRect " + mBitmapRectf.width() + " Bitmap left " + mBitmapRectf.left);
+        Log.d(TAG, "BitmapRect " + mBitmapRectF.width() + " Bitmap left " + mBitmapRectF.left);
 
     }
 
@@ -294,7 +306,7 @@ public class CropImageView extends ImageView {
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
             if (e1 == null || e2 == null) return false;
             if (e1.getPointerCount() > 1 || e2.getPointerCount() > 1) return false;
-            if (mScaleGestureDector.isInProgress()) return false;
+            if (mScaleGestureDetector.isInProgress()) return false;
             CropImageView.this.onScroll(distanceX, distanceY);
             return true;
         }
