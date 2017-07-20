@@ -6,6 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
@@ -51,7 +52,9 @@ public class CropImageView extends ImageView {
     private float mLastPointY;
     private float[] mMatrixValue = new float[9];
 
-    private ImageInfo mImageInfo;//最开始招聘信息
+    private ImageInfo mImageInfo;//最开始图片信息,好像可以删掉
+
+    private PointF mImageCenterPoint = new PointF();
 
     public CropImageView(Context context) {
         this(context, null, 0);
@@ -126,6 +129,24 @@ public class CropImageView extends ImageView {
 
             moveImage(dx,dy);
         }
+    }
+
+
+    public void setHorizontalMirror(){
+        Log.d(TAG,"setHorizontalMirror");
+        updateImageCenter();
+        mDisplayMatrix.postScale(-1,1, mImageCenterPoint.x, mImageCenterPoint.y);
+        mBaseMatrix.postScale(-1,1, mImageCenterPoint.x, mImageCenterPoint.y);
+        setImageMatrix(mDisplayMatrix);//为什么每次都要设置
+        invalidate();
+    }
+
+    private void updateImageCenter() {
+        getBitmapRectf(mDisplayMatrix);//重新获取以下区域
+        float x = (mBitmapRectf.right+mBitmapRectf.left) / 2;
+        float y = (mBitmapRectf.bottom + mBitmapRectf.top) / 2;
+        mImageCenterPoint.set(x,y);
+
     }
 
     private void resetImage() {

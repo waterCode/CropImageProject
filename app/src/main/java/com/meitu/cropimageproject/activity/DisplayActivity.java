@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
 
 import com.meitu.cropimageproject.R;
 import com.meitu.cropimageproject.util.ImageLoadUtil;
@@ -42,6 +43,13 @@ public class DisplayActivity extends AppCompatActivity {
         if(uri !=null) {
             Glide.with(this).load(uri).into(mNeedCropView);
         }*/
+    }
+
+    public void onClick(View v){
+        switch (v.getId()){
+            case R.id.set_mirror_image_bt:
+                mNeedCropView.setHorizontalMirror();
+        }
     }
 
 
