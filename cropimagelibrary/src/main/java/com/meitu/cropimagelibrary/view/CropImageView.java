@@ -16,7 +16,6 @@ import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
-import android.widget.ImageView;
 
 import com.meitu.cropimagelibrary.info.ImageInfo;
 
@@ -93,6 +92,15 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         return true;
     }
 
+
+    @Override
+    public void setScaleType(ScaleType scaleType) {
+        if(scaleType != ScaleType.MATRIX){
+            throw new IllegalArgumentException("scaleType must be matrix");
+        }else {
+            super.setScaleType(scaleType);
+        }
+    }
 
     /**
      * 检车是否越界
@@ -216,7 +224,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         if (drawableRatio > cropRectRatio) {//表示是长图，就是高大于宽
             //按照宽的比例来扩大
             scale = cropRectWidth / intrinsicWidth;
-            moveY = mCropRectF.top;
+            moveY = (getMeasuredHeight() - intrinsicHeight * scale)/2;//视图的高度减去图片的扩大后的高度/2
         } else {
             //按照高的比例来扩大
             scale = cropRectHeight / intrinsicHeight;
