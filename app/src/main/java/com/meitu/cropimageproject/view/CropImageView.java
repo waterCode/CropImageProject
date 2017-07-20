@@ -14,11 +14,13 @@ import android.support.annotation.Nullable;
 import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.widget.ImageView;
 
 import com.meitu.cropimageproject.R;
+import com.meitu.cropimageproject.info.ImageInfo;
 
 /**
  * Created by zmc on 2017/7/18.
@@ -38,15 +40,20 @@ public class CropImageView extends ImageView {
     private Matrix mDisplayMatrix = new Matrix();
 
     private RectF mCropRectf = new RectF();//裁剪框矩形区域
+    private RectF mBitmapRectf;
 
     private Paint mTransParentLayerPaint;//暗色区域背景
     private Paint mWhiteCropPaint;
 
 
     private ScaleGestureDetector mScaleGestureDector;
+    private GestureDetector mGestureDetector;
+
     private float mLastPointX;
     private float mLastPointY;
     private float[] mMatrixValue = new float[9];
+
+    private ImageInfo mImageInfo;//最开始招聘信息
 
     public CropImageView(Context context) {
         this(context, null, 0);
@@ -71,6 +78,7 @@ public class CropImageView extends ImageView {
         mWhiteCropPaint.setStyle(Paint.Style.STROKE);//what？？
 
         mScaleGestureDector = new ScaleGestureDetector(getContext(), new ScaleListener());
+        mGestureDetector = new GestureDetector(getContext(),new GestureListener());
     }
 
 
@@ -79,15 +87,18 @@ public class CropImageView extends ImageView {
         mScaleGestureDector.onTouchEvent(event);
         if (!mScaleGestureDector.isInProgress()) {
             //检测拖动
-            detectMove(event);
+            mGestureDetector.onTouchEvent(event);
+            /*if (event.getPointerCount() == 1) {
+                detectMove(event);
+            }*/
         }
+
         int action = MotionEventCompat.getActionMasked(event);
         if (action == MotionEvent.ACTION_CANCEL) {//松手动手
             checkImagePosition();
         }
         return true;
     }
-
 
 
     private void checkImagePosition() {
@@ -117,15 +128,14 @@ public class CropImageView extends ImageView {
      * @param event
      */
     private void detectMove(MotionEvent event) {
-        int action = MotionEventCompat.getActionMasked(event);
+        int action = event.getAction();
         switch (action) {
 
             case MotionEvent.ACTION_DOWN: {//记录开始的点
-                mLastPointX =event.getX();//记录最后一个点
+                event.getActionIndex();
+                mLastPointX = event.getX();//记录最后一个点
                 mLastPointY = event.getY();
                 break;
-
-
             }
 
             case MotionEvent.ACTION_MOVE: {
@@ -158,6 +168,14 @@ public class CropImageView extends ImageView {
         //拷贝矩阵
         mDisplayMatrix.set(mBaseMatrix);
         setImageMatrix(mDisplayMatrix);
+        MapBitmapRectf(mDisplayMatrix);
+    }
+
+    private void MapBitmapRectf(Matrix displayMatrix) {
+        if (getDrawable() != null) {
+            mBitmapRectf = new RectF(0, 0, getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight());
+            displayMatrix.mapRect(mBitmapRectf);
+        }
     }
 
     /**
@@ -199,6 +217,15 @@ public class CropImageView extends ImageView {
         super.onDraw(canvas);
         drawTransParentLayer(canvas);
         drawCropRect(canvas);
+        if (mImageInfo == null) {//第一次才需要记录，最开始高宽和长度，和放大倍数
+            SetImageInfo();
+        }
+    }
+
+    private void SetImageInfo() {
+        Matrix matirx = getImageMatrix();
+        matirx.getValues(mMatrixValue);
+        mImageInfo = new ImageInfo(getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight(), mMatrixValue[Matrix.MSCALE_X]);
     }
 
     private void drawTransParentLayer(Canvas canvas) {
@@ -248,15 +275,34 @@ public class CropImageView extends ImageView {
         setImageMatrix(mDisplayMatrix);
     }
 
-    private void logMatrixInfo(Matrix matrix){
+    private void logMatrixInfo(Matrix matrix) {
         matrix.getValues(mMatrixValue);
-        Log.d(TAG,"SCALEX："+ mMatrixValue[Matrix.MSCALE_X] + "ScaleY: " + mMatrixValue[Matrix.MSCALE_Y] + "transX "
-                + mMatrixValue[Matrix.MTRANS_X]+" transY " + mMatrixValue[Matrix.MTRANS_Y]);
-        //Log.d(TAG,"Drawable width "+getDrawable().getIntrinsicWidth() + "Drawable height"+getDrawable().getIntrinsicHeight());
-        int width = ((BitmapDrawable)getDrawable()).getBitmap().getWidth();
-        int height= ((BitmapDrawable)getDrawable()).getBitmap().getHeight();
-        Log.d(TAG,"Bitmap width " + width + " Bitmap height "+ height);
+        Log.d(TAG, "SCALEX：" + mMatrixValue[Matrix.MSCALE_X] + "ScaleY: " + mMatrixValue[Matrix.MSCALE_Y] + "transX "
+                + mMatrixValue[Matrix.MTRANS_X] + " transY " + mMatrixValue[Matrix.MTRANS_Y]);
+        Log.d(TAG, "Drawable width " + getDrawable().getIntrinsicWidth() + "Drawable height" + getDrawable().getIntrinsicHeight());
+        Log.d(TAG, "BitmapRect " + mBitmapRectf.width() + " Bitmap left " + mBitmapRectf.left);
+
     }
+
+    private class GestureListener extends GestureDetector.SimpleOnGestureListener {
+
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            if (e1 == null || e2 == null) return false;
+            if (e1.getPointerCount() > 1 || e2.getPointerCount() > 1) return false;
+            if (mScaleGestureDector.isInProgress()) return false;
+            CropImageView.this.onScroll(distanceX, distanceY);
+            return true;
+        }
+    }
+
+    private void onScroll(float distanceX, float distanceY) {
+        Log.d(TAG, "onScroll dx " + distanceX + "dy" + distanceY);
+        mDisplayMatrix.postTranslate(-distanceX, -distanceY);
+        setImageMatrix(mDisplayMatrix);
+        invalidate();
+    }
+
 
     private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
 
