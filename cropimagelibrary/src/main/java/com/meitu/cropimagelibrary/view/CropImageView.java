@@ -1,4 +1,4 @@
-package com.meitu.cropimageproject.view;
+package com.meitu.cropimagelibrary.view;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -18,8 +18,7 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.widget.ImageView;
 
-import com.meitu.cropimageproject.R;
-import com.meitu.cropimageproject.info.ImageInfo;
+import com.meitu.cropimagelibrary.info.ImageInfo;
 
 /**
  * Created by zmc on 2017/7/18.
@@ -30,9 +29,6 @@ public class CropImageView extends ImageView {
 
     private static final String DEFAULT_BACKGROUND_COLOR_ID = "#99000000";
     private static final String TAG = "CropImageView";
-
-    private int mThisWidth = -1;
-    private int mThisHeight = -1;
 
 
     private Matrix mBaseMatrix = new Matrix();
@@ -48,8 +44,7 @@ public class CropImageView extends ImageView {
     private ScaleGestureDetector mScaleGestureDector;
     private GestureDetector mGestureDetector;
 
-    private float mLastPointX;
-    private float mLastPointY;
+
     private float[] mMatrixValue = new float[9];
 
     private ImageInfo mImageInfo;//最开始图片信息,好像可以删掉
@@ -110,9 +105,9 @@ public class CropImageView extends ImageView {
         getBitmapRectf(mDisplayMatrix);//拿到此时图片位置
         if (mBitmapRectf.width() < mCropRectf.width() || mBitmapRectf.height() < mCropRectf.height()) {//缩小到太小回到初始化
             resetImage();
-        }else {
+        } else {
 
-            float dx=0, dy=0;
+            float dx = 0, dy = 0;
             //检查其他4个边界，最多有两个越界
             if (mBitmapRectf.left > mCropRectf.left) {//左边界越界
                 dx = mCropRectf.left - mBitmapRectf.left;
@@ -127,25 +122,25 @@ public class CropImageView extends ImageView {
                 dy = mCropRectf.bottom - mBitmapRectf.bottom;
             }
 
-            moveImage(dx,dy);
+            moveImage(dx, dy);
         }
     }
 
 
-    public void setHorizontalMirror(){
-        Log.d(TAG,"setHorizontalMirror");
+    public void setHorizontalMirror() {
+        Log.d(TAG, "setHorizontalMirror");
         updateImageCenter();
-        mDisplayMatrix.postScale(-1,1, mImageCenterPoint.x, mImageCenterPoint.y);
-        mBaseMatrix.postScale(-1,1, mImageCenterPoint.x, mImageCenterPoint.y);
+        mDisplayMatrix.postScale(-1, 1, mImageCenterPoint.x, mImageCenterPoint.y);
+        mBaseMatrix.postScale(-1, 1, mImageCenterPoint.x, mImageCenterPoint.y);
         setImageMatrix(mDisplayMatrix);//为什么每次都要设置
         invalidate();
     }
 
     private void updateImageCenter() {
         getBitmapRectf(mDisplayMatrix);//重新获取以下区域
-        float x = (mBitmapRectf.right+mBitmapRectf.left) / 2;
+        float x = (mBitmapRectf.right + mBitmapRectf.left) / 2;
         float y = (mBitmapRectf.bottom + mBitmapRectf.top) / 2;
-        mImageCenterPoint.set(x,y);
+        mImageCenterPoint.set(x, y);
 
     }
 
@@ -157,8 +152,6 @@ public class CropImageView extends ImageView {
     }
 
 
-
-
     private void moveImage(float dx, float dy) {
         mDisplayMatrix.postTranslate(dx, dy);
         setImageMatrix(mDisplayMatrix);
@@ -168,8 +161,8 @@ public class CropImageView extends ImageView {
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
-        mThisWidth = getMeasuredWidth();
-        mThisHeight = getMeasuredHeight();
+        int mThisWidth = getMeasuredWidth();
+        int mThisHeight = getMeasuredHeight();
         // TODO: 2017/7/19 这里表示高一定大于宽
         mCropRectf.set(0, (mThisHeight - mThisWidth) / 2, mThisWidth, (mThisHeight + mThisWidth) / 2);//这里初始化好矩形框框的范围
 
@@ -207,8 +200,8 @@ public class CropImageView extends ImageView {
         float cropRectRatio = cropRectHeight / cropRectWidth;
 
         //
-        float scale = 1;
-        float moveX = 0, moveY = 0;
+        float scale;
+        float moveX = 0, moveY;
         if (drawableRatio > cropRectRatio) {//表示是长图，就是高大于宽
             //按照宽的比例来扩大
             scale = cropRectWidth / intrinsicWidth;
@@ -267,7 +260,6 @@ public class CropImageView extends ImageView {
     }
 
     public void setDrawable(Drawable drawable) {
-        Log.d(getContext().getString(R.string.TAG), "setDrawable");
         setImageDrawable(drawable);
 
         requestLayout();
@@ -318,14 +310,11 @@ public class CropImageView extends ImageView {
 
         private float mScaleFactor = 1;
         private static final String TAG = "ScaleListener";
-        private int i = 0;
 
         @Override
         public boolean onScale(ScaleGestureDetector detector) {
             mScaleFactor *= detector.getScaleFactor();
             Log.d(TAG, "" + mScaleFactor);
-            i++;
-            Log.d(TAG, "" + i);
             // Don't let the object get too small or too large.
             mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, 5.0f));
             zoomTo(mScaleFactor, detector.getFocusX(), detector.getFocusY());

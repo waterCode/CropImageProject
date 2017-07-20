@@ -1,4 +1,4 @@
-package com.meitu.cropimageproject.info;
+package com.meitu.cropimagelibrary.info;
 
 /**
  * Created by zmc on 2017/7/19.

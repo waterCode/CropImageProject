@@ -1,4 +1,4 @@
-package com.meitu.cropimageproject.util;
+package com.meitu.cropimagelibrary.util;
 
 import android.app.Application;
 import android.graphics.Point;

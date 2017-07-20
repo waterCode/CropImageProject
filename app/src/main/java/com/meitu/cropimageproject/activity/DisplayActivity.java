@@ -7,9 +7,9 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
+import com.meitu.cropimagelibrary.util.ImageLoadUtil;
+import com.meitu.cropimagelibrary.view.CropImageView;
 import com.meitu.cropimageproject.R;
-import com.meitu.cropimageproject.util.ImageLoadUtil;
-import com.meitu.cropimageproject.view.CropImageView;
 
 import java.io.FileNotFoundException;
 
@@ -45,8 +45,8 @@ public class DisplayActivity extends AppCompatActivity {
         }*/
     }
 
-    public void onClick(View v){
-        switch (v.getId()){
+    public void onClick(View v) {
+        switch (v.getId()) {
             case R.id.set_mirror_image_bt:
                 mNeedCropView.setHorizontalMirror();
         }

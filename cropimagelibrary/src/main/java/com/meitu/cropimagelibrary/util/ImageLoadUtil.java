@@ -1,4 +1,4 @@
-package com.meitu.cropimageproject.util;
+package com.meitu.cropimagelibrary.util;
 
 import android.content.ContentResolver;
 import android.graphics.Bitmap;
@@ -19,21 +19,21 @@ public class ImageLoadUtil {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         InputStream inputStream = contentResolver.openInputStream(uri);
-        BitmapFactory.decodeStream(inputStream,null,options);
+        BitmapFactory.decodeStream(inputStream, null, options);
         int width = options.outWidth;
         int height = options.outHeight;
         int scale = 1;
         while (height > 1000 && width > 1000) {
-            height/=2;
-            width/=2;
-            scale =scale*2;
+            height /= 2;
+            width /= 2;
+            scale = scale * 2;
         }
-        options.inSampleSize=scale;//缩小倍数
+        options.inSampleSize = scale;//缩小倍数
         options.inJustDecodeBounds = false;
         //然后就可以直接加载了
 
         //再开一个输入流
         inputStream = contentResolver.openInputStream(uri);
-        return BitmapFactory.decodeStream(inputStream,null,options);
+        return BitmapFactory.decodeStream(inputStream, null, options);
     }
 }
