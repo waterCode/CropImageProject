@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/CropImageProject.iml" filepath="$PROJECT_DIR$/CropImageProject.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/cropimagelibrary/cropimagelibrary.iml" filepath="$PROJECT_DIR$/cropimagelibrary/cropimagelibrary.iml" />
     </modules>
   </component>
 </project>
