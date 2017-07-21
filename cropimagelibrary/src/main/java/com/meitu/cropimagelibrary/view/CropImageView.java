@@ -165,9 +165,10 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         mTempMatrix.mapPoints(tempImageCorners);//获取移动到中心点的各个坐标
 
         boolean isWillImageWrapCropBounds = isImageWrapCropBounds(tempImageCorners);
+        //isWillImageWrapCropBounds = true;
 
         //可以话只求出移动的距离，否则求出放大倍数
-        if (!isWillImageWrapCropBounds) {
+        if (isWillImageWrapCropBounds) {
             final float[] imageIndents = calculateImageIndents();
             dx = -(imageIndents[0] + imageIndents[2]);//估计现在和那个之前的距离
             dy = -(imageIndents[1] + imageIndents[3]);
@@ -185,7 +186,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         //移动相应的距离
         mDisplayMatrix.postTranslate(dx,dy);
         //再放大
-        if (isWillImageWrapCropBounds){
+        if (!isWillImageWrapCropBounds){
             mDisplayMatrix.postScale(deltaScale,deltaScale,mCropRectF.centerX(),mCropRectF.centerY());
         }
         //设置矩阵并重绘
@@ -227,7 +228,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     protected boolean isImageWrapCropBounds(float[] imageCorners) {
         mTempMatrix.reset();
-       // mTempMatrix.setRotate(-getCurrentAngle());
+        mTempMatrix.setRotate(-getCurrentAngle());
 
         float[] unrotatedImageCorners = Arrays.copyOf(imageCorners, imageCorners.length);
         mTempMatrix.mapPoints(unrotatedImageCorners);//把矩阵摆正嘛？
@@ -236,6 +237,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         mTempMatrix.mapPoints(unrotatedCropBoundsCorners);
 
         return RectUtils.trapToRect(unrotatedImageCorners).contains(RectUtils.trapToRect(unrotatedCropBoundsCorners));
+
     }
 
 
