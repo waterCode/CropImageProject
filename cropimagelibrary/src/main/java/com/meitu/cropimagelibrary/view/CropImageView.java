@@ -36,7 +36,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     private static final String TAG = "CropImageView";
 
-    private boolean mScaleEnable = false;
+    private boolean mScaleEnable = true;
     private boolean mRotateEnable = true;
 
 
@@ -165,7 +165,6 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         mTempMatrix.mapPoints(tempImageCorners);//获取移动到中心点的各个坐标
 
         boolean isWillImageWrapCropBounds = isImageWrapCropBounds(tempImageCorners);
-        //isWillImageWrapCropBounds = true;
 
         //可以话只求出移动的距离，否则求出放大倍数
         if (isWillImageWrapCropBounds) {
@@ -420,7 +419,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      * @param focusY       放大中心点y坐标
      */
     private void zoomTo(float mScaleFactor, float focusX, float focusY) {
-        mDisplayMatrix.set(mBaseMatrix);
+
         mDisplayMatrix.postScale(mScaleFactor, mScaleFactor, focusX, focusY);
         setImageMatrix(mDisplayMatrix);
     }
@@ -465,10 +464,11 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
         @Override
         public boolean onScale(ScaleGestureDetector detector) {
-            mScaleFactor *= detector.getScaleFactor();
-            Log.d(TAG, "" + mScaleFactor);
+            mScaleFactor = detector.getScaleFactor();
+            Log.d(TAG, "mScaleFactor" + mScaleFactor);
             // Don't let the object get too small or too large.
             mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, 5.0f));
+
             zoomTo(mScaleFactor, detector.getFocusX(), detector.getFocusY());
             invalidate();
             return true;
