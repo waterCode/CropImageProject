@@ -11,7 +11,7 @@ import com.meitu.cropimagelibrary.util.FileUtil;
 import com.meitu.cropimagelibrary.view.CropImageView;
 import com.meitu.cropimageproject.R;
 
-import java.io.File;
+
 
 /**
  * Created by zmc on 2017/7/18.

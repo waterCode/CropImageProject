@@ -315,8 +315,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
-        int mThisWidth = getMeasuredWidth();
-        int mThisHeight = getMeasuredHeight();
+        float mThisWidth = getMeasuredWidth();
+        float mThisHeight = getMeasuredHeight();
         // TODO: 2017/7/19 这里表示高一定大于宽
         mCropRectF.set(0, (mThisHeight - mThisWidth) / 2, mThisWidth, (mThisHeight + mThisWidth) / 2);//这里初始化好矩形框框的范围
 
