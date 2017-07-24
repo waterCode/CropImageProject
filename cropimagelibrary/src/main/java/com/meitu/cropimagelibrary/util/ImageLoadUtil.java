@@ -16,15 +16,14 @@ public class ImageLoadUtil {
 
 
     /**
-     *
      * @param contentResolver 内容提供器
-     * @param uri 图片的uri
-     * @param maxHeight 最大高度
-     * @param maxWidth 最大宽度
+     * @param uri             图片的uri
+     * @param maxHeight       最大高度
+     * @param maxWidth        最大宽度
      * @return 对应的Bitmap对象
      * @throws FileNotFoundException
      */
-    public static Bitmap loadImage(ContentResolver contentResolver, Uri uri,int maxHeight,int maxWidth) throws FileNotFoundException {
+    public static Bitmap loadImage(ContentResolver contentResolver, Uri uri, int maxHeight, int maxWidth) throws FileNotFoundException {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         InputStream inputStream = contentResolver.openInputStream(uri);

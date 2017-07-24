@@ -9,7 +9,7 @@ public class ImageInfo {
     private final float mInitHeight;
     private final float mInitScale;
 
-    private float mGestureScale =1;
+    private float mGestureScale = 1;
 
     public ImageInfo(float mWidth, float mHeight, float mScale) {
         this.mInitWidth = mWidth;

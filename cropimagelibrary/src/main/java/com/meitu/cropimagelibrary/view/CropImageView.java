@@ -482,18 +482,18 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             //获得旋转后的图片
             Matrix rotateMatrix = new Matrix();
             rotateMatrix.setRotate(getCurrentAngle());
-            originBitmapFromUri = Bitmap.createBitmap(originBitmapFromUri,0,0,originBitmapFromUri.getWidth(),originBitmapFromUri.getHeight(),rotateMatrix,true);
+            originBitmapFromUri = Bitmap.createBitmap(originBitmapFromUri, 0, 0, originBitmapFromUri.getWidth(), originBitmapFromUri.getHeight(), rotateMatrix, true);
 
             float scale_x = mBitmapRectF.width() / originBitmapFromUri.getWidth();
             float scale_y = mBitmapRectF.height() / originBitmapFromUri.getHeight();
-            initScale = Math.min(scale_x,scale_y);
+            initScale = Math.min(scale_x, scale_y);
             int dx = (int) ((mCropRectF.left - mBitmapRectF.left) / initScale);
             int dy = (int) ((mCropRectF.top - mBitmapRectF.top) / initScale);
-            int width = (int) ((int) mCropRectF.width()/ initScale);
-            int height = (int) ((int) mCropRectF.height()/ initScale);
+            int width = (int) ((int) mCropRectF.width() / initScale);
+            int height = (int) ((int) mCropRectF.height() / initScale);
             Bitmap outBitmap = Bitmap.createBitmap(originBitmapFromUri, dx, dy, width, height);//这个为输出文件
             return outBitmap;
-        }else {
+        } else {
             return null;
         }
     }

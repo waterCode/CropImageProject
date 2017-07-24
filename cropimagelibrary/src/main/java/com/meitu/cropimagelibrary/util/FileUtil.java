@@ -1,7 +1,6 @@
 package com.meitu.cropimagelibrary.util;
 
 import android.app.Activity;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
