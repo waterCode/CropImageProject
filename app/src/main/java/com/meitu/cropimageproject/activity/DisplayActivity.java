@@ -40,6 +40,15 @@ public class DisplayActivity extends AppCompatActivity {
                 Bitmap bitmap = mNeedCropView.cropAndSaveImage();
                 FileUtil.bitmapConvertToFile(bitmap,this);
                 break;
+            case R.id.rightRotate_bt:
+                mNeedCropView.rightRotate90();
+                break;
+            case R.id.leftRotate_bt:
+                mNeedCropView.leftRotate90();
+                break;
+            case R.id.cancel_crop_activity_bt:
+                finish();
+            default:break;
         }
     }
 

@@ -278,10 +278,32 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      */
     public void setHorizontalMirror() {
         Log.d(TAG, "setHorizontalMirror");
-        updateImageCenter();
-        mDisplayMatrix.postScale(-1, 1, mBitmapRectF.centerX(), mBitmapRectF.centerY());
-        //mBaseMatrix.postScale(-1, 1, mCropRectF.centerX(), mCropRectF.centerY());
+        postScale(-1f,1f);
+    }
 
+    /**
+     * 设置成水平镜像
+     */
+    public void setVerticalMirror() {
+        Log.d(TAG, "setHorizontalMirror");
+        postScale(1f,-1f);
+    }
+
+    public void rightRotate90(){
+        postRotate(90,mCropRectF.centerX(),mCropRectF.centerY());
+    }
+
+    public void leftRotate90(){
+        postRotate(-90,mCropRectF.centerX(),mCropRectF.centerY());
+    }
+
+    /**
+     * 放大，以裁剪框为中心
+     * @param sx x轴放大的倍数
+     * @param sy y轴放大的倍数
+     */
+    private void postScale(float sx, float sy) {
+        mDisplayMatrix.postScale(sx, sy, mCropRectF.centerX(), mCropRectF.centerY());
         setImageMatrix(mDisplayMatrix);//为什么每次都要设置
         invalidate();
     }
@@ -547,8 +569,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         }
     }
 
-    private void postRotate(float angle, float x, float y) {
-        mDisplayMatrix.postRotate(angle, x, y);
+    private void postRotate(float angle, float centerX, float centerY) {
+        mDisplayMatrix.postRotate(angle, centerX, centerY);
         setImageMatrix(mDisplayMatrix);
         invalidate();
     }
