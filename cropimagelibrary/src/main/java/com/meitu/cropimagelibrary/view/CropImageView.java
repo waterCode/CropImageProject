@@ -23,6 +23,7 @@ import android.view.ScaleGestureDetector;
 import com.meitu.cropimagelibrary.info.ImageInfo;
 import com.meitu.cropimagelibrary.model.RotateTask;
 import com.meitu.cropimagelibrary.model.TransFormTask;
+import com.meitu.cropimagelibrary.model.TranslateTask;
 import com.meitu.cropimagelibrary.util.ImageLoadUtil;
 import com.meitu.cropimagelibrary.util.RectUtils;
 import com.meitu.cropimagelibrary.util.RotationGestureDetector;
@@ -194,18 +195,20 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
 
         //移动相应的距离
-        mDisplayMatrix.postTranslate(dx, dy);
+        postTranslate(dx, dy,true);
         //再放大
         if (!isWillImageWrapCropBounds) {
             mDisplayMatrix.postScale(deltaScale, deltaScale, mCropRectF.centerX(), mCropRectF.centerY());
             //设置imageInfo的放大倍数
             mImageInfo.setGestureScale(mImageInfo.getGestureScale() * deltaScale);
+            setImageMatrix(mDisplayMatrix);
+            invalidate();
         }
         //设置矩阵并重绘
-        setImageMatrix(mDisplayMatrix);
-        invalidate();
 
     }
+
+
 
     private void backToMaxScale() {
         float scale = MAX_SCALE / mImageInfo.getGestureScale();
@@ -622,6 +625,17 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     }
 
+    private void postTranslate(float dx, float dy,boolean hasAnimation) {
+        if(hasAnimation){
+            TranslateTask task = new TranslateTask(DEFAULT_ANIMATION_TIME,dx,dy);
+            mTransFormTaskPool.postTask(task);
+        }else {
+            mDisplayMatrix.postTranslate(dx, dy);
+            setImageMatrix(mDisplayMatrix);
+            invalidate();
+        }
+    }
+
     private static class TransFormTaskPool {
         static Queue<TransFormTask> mTaskQueue = new LinkedList<>();
         static TransFormTask mActive;
@@ -660,20 +674,37 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
         private void continueTask(TransFormTask task) {
             switch (task.getTaskId()) {
-                case TransFormTask.TRANSFORM_ROTATE:
+                case TransFormTask.TRANSFORM_ROTATE: {
                     //旋转任务
                     if (task instanceof RotateTask) {
                         float centerX = ((RotateTask) task).getCenterX();
                         float centerY = ((RotateTask) task).getCenterY();
                         float angel = ((RotateTask) task).getAngel();
-                        if(task.isFinish()) {
+                        if (task.isFinish()) {
                             mActive = null;
                         }
                         mMatrix.postRotate(angel, centerX, centerY);
-                        mView.setImageMatrix(mMatrix);
-                        mView.invalidate();
                     }
+                    break;
+                }
+                case TransFormTask.TRANSFORM_TRANSLATE:{
+                    if (task instanceof TranslateTask){
+                        TranslateTask.TranslateParams params = ((TranslateTask) task).getTranslateParams();
+                        if (task.isFinish()) {
+                            mActive = null;
+                        }
+                        mMatrix.postTranslate(params.x,params.y);
+                        Log.d(TAG,"此次位移"+"dx:"+params.x+"dy:"+params.y);
+                    }
+                    break;
+                }
+
+
+
             }
+
+            mView.setImageMatrix(mMatrix);
+            mView.invalidate();
         }
     }
 
