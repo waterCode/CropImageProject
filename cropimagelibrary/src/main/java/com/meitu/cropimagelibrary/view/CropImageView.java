@@ -21,12 +21,16 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 
 import com.meitu.cropimagelibrary.info.ImageInfo;
+import com.meitu.cropimagelibrary.model.RotateTask;
+import com.meitu.cropimagelibrary.model.TransFormTask;
 import com.meitu.cropimagelibrary.util.ImageLoadUtil;
 import com.meitu.cropimagelibrary.util.RectUtils;
 import com.meitu.cropimagelibrary.util.RotationGestureDetector;
 
 import java.io.FileNotFoundException;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * Created by zmc on 2017/7/18.
@@ -37,6 +41,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     private static final String DEFAULT_BACKGROUND_COLOR_ID = "#99000000";//超过裁剪部分的矩形框
     private static final String TAG = "CropImageView";
+    private static final long DEFAULT_ANIMATION_TIME = 500;
     private float MAX_SCALE = 3f;
     private boolean mScaleEnable = true;
     private boolean mRotateEnable = true;
@@ -69,7 +74,9 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     private float[] mCurrentImageCorners = new float[8];//用来存放当前顶点坐标啊
     private float[] mInitImageCorners = new float[8];
-    private Uri mUri;
+    private Uri mUri;//图片的uri
+
+    private TransFormTaskPool mTransFormTaskPool;
 
     public CropImageView(Context context) {
         this(context, null, 0);
@@ -97,6 +104,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         mGestureDetector = new GestureDetector(getContext(), new GestureListener());
         mRotationGestureDetector = new RotationGestureDetector(new RotationListener());
 
+        mTransFormTaskPool = new TransFormTaskPool(this, mDisplayMatrix);
     }
 
 
@@ -313,15 +321,15 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     }
 
     public void rightRotate90() {
-        postRotate(90, mCropRectF.centerX(), mCropRectF.centerY());
+        postRotate(90, mCropRectF.centerX(), mCropRectF.centerY(),true);
     }
 
     public void leftRotate90() {
-        postRotate(-90, mCropRectF.centerX(), mCropRectF.centerY());
+        postRotate(-90, mCropRectF.centerX(), mCropRectF.centerY(),true);
     }
 
     public void postAnyRotate(float anyAngel) {
-        postRotate(anyAngel, mCropRectF.centerX(), mCropRectF.centerY());
+        postRotate(anyAngel, mCropRectF.centerX(), mCropRectF.centerY(),true);
         checkImagePosition();
     }
 
@@ -433,6 +441,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
                 SetImageInfo();
             }
         }
+
+        mTransFormTaskPool.onDrawFinish();//回调
     }
 
     private void SetImageInfo() {
@@ -592,16 +602,79 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         @Override
         public boolean onRotation(RotationGestureDetector rotationDetector) {
             float angle = rotationDetector.getAngle();
-            postRotate(angle, mMidPntX, mMidPntY);
+            postRotate(angle, mMidPntX, mMidPntY,false);
             return super.onRotation(rotationDetector);
         }
     }
 
-    private void postRotate(float angle, float centerX, float centerY) {
-        mDisplayMatrix.postRotate(angle, centerX, centerY);
-        setImageMatrix(mDisplayMatrix);
-        invalidate();
+
+    private void postRotate(float angle, float centerX, float centerY,boolean hasAnimation) {
+        if(hasAnimation){
+        //代替的是。
+        RotateTask rotateTask = new RotateTask(DEFAULT_ANIMATION_TIME, angle, centerX, centerY);
+        mTransFormTaskPool.postTask(rotateTask);
+
+        }else {
+            mDisplayMatrix.postRotate(angle, centerX, centerY);
+            setImageMatrix(mDisplayMatrix);
+            invalidate();
+        }
+
     }
 
+    private static class TransFormTaskPool {
+        static Queue<TransFormTask> mTaskQueue = new LinkedList<>();
+        static TransFormTask mActive;
+        private Matrix mMatrix;
+        private CropImageView mView;
+
+        public TransFormTaskPool(CropImageView view, Matrix displayMatrix) {
+            mMatrix = displayMatrix;
+            mView = view;
+        }
+
+
+        public void postTask(TransFormTask task) {
+            if (mActive == null) {
+                mActive = task;
+                continueTask(task);
+            } else {
+                mTaskQueue.add(task);
+            }
+        }
+
+        public void onDrawFinish() {
+            if (mActive == null) {
+                if(mTaskQueue.size()>0){//任务数量大于0
+                    mActive = mTaskQueue.poll();
+                }else {
+                    return;//直接就往下执行
+                }
+            }
+            if (mActive.isFinish()) {
+                //拿下一个任务
+            } else {
+                continueTask(mActive);
+            }
+        }
+
+        private void continueTask(TransFormTask task) {
+            switch (task.getTaskId()) {
+                case TransFormTask.TRANSFORM_ROTATE:
+                    //旋转任务
+                    if (task instanceof RotateTask) {
+                        float centerX = ((RotateTask) task).getCenterX();
+                        float centerY = ((RotateTask) task).getCenterY();
+                        float angel = ((RotateTask) task).getAngel();
+                        if(task.isFinish()) {
+                            mActive = null;
+                        }
+                        mMatrix.postRotate(angel, centerX, centerY);
+                        mView.setImageMatrix(mMatrix);
+                        mView.invalidate();
+                    }
+            }
+        }
+    }
 
 }
