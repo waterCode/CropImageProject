@@ -15,7 +15,16 @@ import java.io.InputStream;
 public class ImageLoadUtil {
 
 
-    public static Bitmap loadImage(ContentResolver contentResolver, Uri uri) throws FileNotFoundException {
+    /**
+     *
+     * @param contentResolver 内容提供器
+     * @param uri 图片的uri
+     * @param maxHeight 最大高度
+     * @param maxWidth 最大宽度
+     * @return 对应的Bitmap对象
+     * @throws FileNotFoundException
+     */
+    public static Bitmap loadImage(ContentResolver contentResolver, Uri uri,int maxHeight,int maxWidth) throws FileNotFoundException {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         InputStream inputStream = contentResolver.openInputStream(uri);
@@ -23,7 +32,7 @@ public class ImageLoadUtil {
         int width = options.outWidth;
         int height = options.outHeight;
         int scale = 1;
-        while (height > 1000 && width > 1000) {
+        while (height > maxHeight && width > maxWidth) {
             height /= 2;
             width /= 2;
             scale = scale * 2;

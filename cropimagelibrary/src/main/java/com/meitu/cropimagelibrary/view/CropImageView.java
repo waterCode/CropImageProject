@@ -9,7 +9,9 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
@@ -19,9 +21,11 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 
 import com.meitu.cropimagelibrary.info.ImageInfo;
+import com.meitu.cropimagelibrary.util.ImageLoadUtil;
 import com.meitu.cropimagelibrary.util.RectUtils;
 import com.meitu.cropimagelibrary.util.RotationGestureDetector;
 
+import java.io.FileNotFoundException;
 import java.util.Arrays;
 
 /**
@@ -65,6 +69,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     private float[] mCurrentImageCorners = new float[8];//用来存放当前顶点坐标啊
     private float[] mInitImageCorners = new float[8];
+    private Uri mUri;
 
     public CropImageView(Context context) {
         this(context, null, 0);
@@ -176,7 +181,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         if (!isWillImageWrapCropBounds) {
             mDisplayMatrix.postScale(deltaScale, deltaScale, mCropRectF.centerX(), mCropRectF.centerY());
             //设置imageInfo的放大倍数
-            mImageInfo.setGestureScale(mImageInfo.getGestureScale()*deltaScale);
+            mImageInfo.setGestureScale(mImageInfo.getGestureScale() * deltaScale);
         }
         //设置矩阵并重绘
         setImageMatrix(mDisplayMatrix);
@@ -186,7 +191,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     private void backToMaxScale() {
         float scale = MAX_SCALE / mImageInfo.getGestureScale();
         // TODO: 2017/7/21 放大，缩小，中心点问题
-        Log.d(TAG,"要回弹的倍数"+scale+"到最大倍数"+MAX_SCALE);
+        Log.d(TAG, "要回弹的倍数" + scale + "到最大倍数" + MAX_SCALE);
         mImageInfo.setGestureScale(MAX_SCALE);
         mDisplayMatrix.postScale(scale, scale, mCropRectF.centerX(), mCropRectF.centerY());
         setImageMatrix(mDisplayMatrix);
@@ -266,8 +271,9 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     public void setHorizontalMirror() {
         Log.d(TAG, "setHorizontalMirror");
         updateImageCenter();
-        mDisplayMatrix.postScale(-1, 1, mCropRectF.centerX(), mCropRectF.centerY());
-        mBaseMatrix.postScale(-1, 1, mCropRectF.centerX(), mCropRectF.centerY());
+        mDisplayMatrix.postScale(-1, 1, mBitmapRectF.centerX(), mBitmapRectF.centerY());
+        //mBaseMatrix.postScale(-1, 1, mCropRectF.centerX(), mCropRectF.centerY());
+
         setImageMatrix(mDisplayMatrix);//为什么每次都要设置
         invalidate();
     }
@@ -405,6 +411,12 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         invalidate();
     }
 
+    @Override
+    public void setImageURI(@Nullable Uri uri) {
+        super.setImageURI(uri);
+        mUri = uri;
+    }
+
     public void setDrawable(Drawable drawable) {
         setImageDrawable(drawable);
         requestLayout();
@@ -439,6 +451,53 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         Log.d(TAG, "rotaeRectWidth" + r.width());
     }
 
+    /**
+     * @return 返回当前的Bitmap对象
+     */
+    public Bitmap getImageBitmap() {
+        BitmapDrawable bitmapDrawable = (BitmapDrawable) getDrawable();
+        return bitmapDrawable.getBitmap();
+
+    }
+
+    public Bitmap cropAndSaveImage() {
+        Bitmap bitmap = getImageBitmap();
+        Bitmap currentBigBitmap = null, originBitmapFromUri = null;
+        float initScale = 1;
+        if (bitmap != null) {
+            //当前的大图
+            //currentBigBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), mDisplayMatrix, true);
+            try {
+                originBitmapFromUri = ImageLoadUtil.loadImage(getContext().getContentResolver(), mUri, 4000, 4000);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+
+        //此时已经拿到最初的放大倍数
+
+        //求出裁剪框和大图的相对位置dx,dy;
+        if (bitmap != null) {
+            getBitmapRectf(mDisplayMatrix);//mBitmapRectf就代表当前矩阵
+            //获得旋转后的图片
+            Matrix rotateMatrix = new Matrix();
+            rotateMatrix.setRotate(getCurrentAngle());
+            originBitmapFromUri = Bitmap.createBitmap(originBitmapFromUri,0,0,originBitmapFromUri.getWidth(),originBitmapFromUri.getHeight(),rotateMatrix,true);
+
+            float scale_x = mBitmapRectF.width() / originBitmapFromUri.getWidth();
+            float scale_y = mBitmapRectF.height() / originBitmapFromUri.getHeight();
+            initScale = Math.min(scale_x,scale_y);
+            int dx = (int) ((mCropRectF.left - mBitmapRectF.left) / initScale);
+            int dy = (int) ((mCropRectF.top - mBitmapRectF.top) / initScale);
+            int width = (int) ((int) mCropRectF.width()/ initScale);
+            int height = (int) ((int) mCropRectF.height()/ initScale);
+            Bitmap outBitmap = Bitmap.createBitmap(originBitmapFromUri, dx, dy, width, height);//这个为输出文件
+            return outBitmap;
+        }else {
+            return null;
+        }
+    }
+
     private class GestureListener extends GestureDetector.SimpleOnGestureListener {
 
         @Override
@@ -467,8 +526,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         public boolean onScale(ScaleGestureDetector detector) {
             mScaleFactor = detector.getScaleFactor();
             mCurrentScale *= mScaleFactor;
-            Log.d(TAG,"当前放大倍数"+mCurrentScale);
-            Log.d(TAG,"mImageInfo放大倍数"+mImageInfo.getGestureScale());
+            Log.d(TAG, "当前放大倍数" + mCurrentScale);
+            Log.d(TAG, "mImageInfo放大倍数" + mImageInfo.getGestureScale());
 
             mImageInfo.setGestureScale(mImageInfo.getGestureScale() * mScaleFactor);//设置当前放大倍数
             Log.d(TAG, "mCurrentScale" + mCurrentScale);
