@@ -127,6 +127,14 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     }
 
 
+    public void setScaleEnable(boolean mScaleEnable) {
+        this.mScaleEnable = mScaleEnable;
+    }
+
+    public void setRotateEnable(boolean mRotateEnable) {
+        this.mRotateEnable = mRotateEnable;
+    }
+
     @Override
     public void setScaleType(ScaleType scaleType) {
         if (scaleType != ScaleType.MATRIX) {
@@ -136,14 +144,6 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         }
     }
 
-
-    public void setScaleEnable(boolean mScaleEnable) {
-        this.mScaleEnable = mScaleEnable;
-    }
-
-    public void setRotateEnable(boolean mRotateEnable) {
-        this.mRotateEnable = mRotateEnable;
-    }
     /**
      * 检车是否越界
      */
@@ -379,12 +379,12 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         if (getDrawable() != null) {
             logMatrixInfo(getImageMatrix());
             if (mImageInfo == null) {//第一次才需要记录，最开始高宽和长度，和放大倍数
-                setImageInfo();
+                SetImageInfo();
             }
         }
     }
 
-    private void setImageInfo() {
+    private void SetImageInfo() {
         Matrix matrix = getImageMatrix();
         matrix.getValues(mMatrixValue);
         mImageInfo = new ImageInfo(getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight(), mMatrixValue[Matrix.MSCALE_X]);
