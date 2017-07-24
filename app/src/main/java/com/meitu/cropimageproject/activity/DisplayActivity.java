@@ -41,7 +41,7 @@ public class DisplayActivity extends AppCompatActivity {
                 FileUtil.bitmapConvertToFile(bitmap,this);
                 break;
             case R.id.rightRotate_bt:
-                mNeedCropView.rightRotate90();
+                mNeedCropView.postAnyRotate(45);
                 break;
             case R.id.leftRotate_bt:
                 mNeedCropView.leftRotate90();

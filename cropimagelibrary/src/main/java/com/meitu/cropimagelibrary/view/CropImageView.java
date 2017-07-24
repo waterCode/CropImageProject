@@ -183,6 +183,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             deltaScale = Math.max(tempCropRect.width() / currentImageSides[0],
                     tempCropRect.height() / currentImageSides[1]);
         }
+
+
         //移动相应的距离
         mDisplayMatrix.postTranslate(dx, dy);
         //再放大
@@ -194,6 +196,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         //设置矩阵并重绘
         setImageMatrix(mDisplayMatrix);
         invalidate();
+
     }
 
     private void backToMaxScale() {
@@ -270,6 +273,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     /**
      * 返回对应举证的放大倍数，x的平方+y的平方，再求根号
+     *
      * @param matrix 所求放大倍数的矩阵
      * @return 放大倍数
      */
@@ -294,11 +298,11 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      * 设置成水平镜像
      */
     public void setHorizontalMirror() {
-        Log.d(TAG, "current angele beforeHorizontalMirror"+getCurrentAngle());
-        Log.d(TAG, "current scale beforeHorizontalMirror" +getCurrentScale());
+        Log.d(TAG, "current angele beforeHorizontalMirror" + getCurrentAngle());
+        Log.d(TAG, "current scale beforeHorizontalMirror" + getCurrentScale());
         postScale(-1f, 1f);
-        Log.d(TAG, "current angele afterHorizontalMirror"+getCurrentAngle());
-        Log.d(TAG, "current scale  afterHorizontalMirror" +getCurrentScale());
+        Log.d(TAG, "current angele afterHorizontalMirror" + getCurrentAngle());
+        Log.d(TAG, "current scale  afterHorizontalMirror" + getCurrentScale());
     }
 
     /**
@@ -314,6 +318,11 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     public void leftRotate90() {
         postRotate(-90, mCropRectF.centerX(), mCropRectF.centerY());
+    }
+
+    public void postAnyRotate(float anyAngel) {
+        postRotate(anyAngel, mCropRectF.centerX(), mCropRectF.centerY());
+        checkImagePosition();
     }
 
     /**
@@ -417,6 +426,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         super.onDraw(canvas);
         drawTransParentLayer(canvas);
         drawCropRect(canvas);
+
         if (getDrawable() != null) {
             logMatrixInfo(getImageMatrix());
             if (mImageInfo == null) {//第一次才需要记录，最开始高宽和长度，和放大倍数
@@ -592,4 +602,6 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         setImageMatrix(mDisplayMatrix);
         invalidate();
     }
+
+
 }

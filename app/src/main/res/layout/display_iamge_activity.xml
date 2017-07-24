@@ -31,7 +31,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:onClick="onClick"
-            android:text="右旋转90" />
+            android:text="右旋转45" />
 
         <Button
             android:id="@+id/leftRotate_bt"
