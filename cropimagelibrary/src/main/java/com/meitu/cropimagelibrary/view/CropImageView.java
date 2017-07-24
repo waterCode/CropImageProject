@@ -10,7 +10,6 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
-import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
@@ -33,9 +32,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
 
     private static final String DEFAULT_BACKGROUND_COLOR_ID = "#99000000";//超过裁剪部分的矩形框
-
     private static final String TAG = "CropImageView";
-
+    private float MAX_SCALE = 3f;
     private boolean mScaleEnable = true;
     private boolean mRotateEnable = true;
 
@@ -138,30 +136,20 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      */
     private void checkImagePosition() {
         Log.d(TAG, "checkImagePosition");
-        /*getBitmapRectf(mDisplayMatrix);//拿到此时图片位置
-        if (mBitmapRectF.width() < mCropRectF.width() || mBitmapRectF.height() < mCropRectF.height()) {//缩小到太小回到初始化
-            resetImage();
-        } else {
-
-            float dx = 0, dy = 0;
-            if (!mBitmapRectF.contains(mCropRectF)) {//有越界。需要移动,计算出需要移动的距离
-                dx = mCropRectF.centerX() - mBitmapRectF.centerX();
-                dy = mCropRectF.centerY() - mBitmapRectF.centerY();
-            }
-            moveImage(dx, dy);
-        }*/
-
-        mDisplayMatrix.mapPoints(mCurrentImageCorners,mInitImageCorners);//求出当前的坐标
-        float dx,dy;//中心便宜距离
-        float deltaScale =1;
+        if (mImageInfo.getGestureScale() > MAX_SCALE) {
+            backToMaxScale();
+        }
+        mDisplayMatrix.mapPoints(mCurrentImageCorners, mInitImageCorners);//求出当前的坐标
+        float dx, dy;//中心便宜距离
+        float deltaScale = 1;
         getBitmapRectf(mDisplayMatrix);
         dx = mCropRectF.centerX() - mBitmapRectF.centerX();//拿到需要移动距离
         dy = mCropRectF.centerY() - mBitmapRectF.centerY();
         //判断回到中心后能不能回到覆盖
         mTempMatrix.reset();
         mTempMatrix.set(mDisplayMatrix);//设置当前的位置
-        mTempMatrix.postTranslate(dx,dy);//回到中心点
-        float[] tempImageCorners = Arrays.copyOf(mInitImageCorners,mInitImageCorners.length);//拷贝一份初始点
+        mTempMatrix.postTranslate(dx, dy);//回到中心点
+        float[] tempImageCorners = Arrays.copyOf(mInitImageCorners, mInitImageCorners.length);//拷贝一份初始点
         mTempMatrix.mapPoints(tempImageCorners);//获取移动到中心点的各个坐标
 
         boolean isWillImageWrapCropBounds = isImageWrapCropBounds(tempImageCorners);
@@ -183,12 +171,24 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
                     tempCropRect.height() / currentImageSides[1]);
         }
         //移动相应的距离
-        mDisplayMatrix.postTranslate(dx,dy);
+        mDisplayMatrix.postTranslate(dx, dy);
         //再放大
-        if (!isWillImageWrapCropBounds){
-            mDisplayMatrix.postScale(deltaScale,deltaScale,mCropRectF.centerX(),mCropRectF.centerY());
+        if (!isWillImageWrapCropBounds) {
+            mDisplayMatrix.postScale(deltaScale, deltaScale, mCropRectF.centerX(), mCropRectF.centerY());
+            //设置imageInfo的放大倍数
+            mImageInfo.setGestureScale(mImageInfo.getGestureScale()*deltaScale);
         }
         //设置矩阵并重绘
+        setImageMatrix(mDisplayMatrix);
+        invalidate();
+    }
+
+    private void backToMaxScale() {
+        float scale = MAX_SCALE / mImageInfo.getGestureScale();
+        // TODO: 2017/7/21 放大，缩小，中心点问题
+        Log.d(TAG,"要回弹的倍数"+scale+"到最大倍数"+MAX_SCALE);
+        mImageInfo.setGestureScale(MAX_SCALE);
+        mDisplayMatrix.postScale(scale, scale, mCropRectF.centerX(), mCropRectF.centerY());
         setImageMatrix(mDisplayMatrix);
         invalidate();
     }
@@ -255,7 +255,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
                 getMatrixValue(matrix, Matrix.MSCALE_X)) * (180 / Math.PI));
     }
 
-    protected float getMatrixValue(@NonNull Matrix matrix,  int valueIndex) {
+    protected float getMatrixValue(@NonNull Matrix matrix, int valueIndex) {
         matrix.getValues(mMatrixValue);
         return mMatrixValue[valueIndex];
     }
@@ -266,8 +266,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     public void setHorizontalMirror() {
         Log.d(TAG, "setHorizontalMirror");
         updateImageCenter();
-        mDisplayMatrix.postScale(-1, 1, mImageCenterPoint.x, mImageCenterPoint.y);
-        mBaseMatrix.postScale(-1, 1, mImageCenterPoint.x, mImageCenterPoint.y);
+        mDisplayMatrix.postScale(-1, 1, mCropRectF.centerX(), mCropRectF.centerY());
+        mBaseMatrix.postScale(-1, 1, mCropRectF.centerX(), mCropRectF.centerY());
         setImageMatrix(mDisplayMatrix);//为什么每次都要设置
         invalidate();
     }
@@ -461,14 +461,19 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
         private float mScaleFactor = 1;
         private static final String TAG = "ScaleListener";
+        private float mCurrentScale = 1;
 
         @Override
         public boolean onScale(ScaleGestureDetector detector) {
             mScaleFactor = detector.getScaleFactor();
-            Log.d(TAG, "mScaleFactor" + mScaleFactor);
-            // Don't let the object get too small or too large.
-            mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, 5.0f));
+            mCurrentScale *= mScaleFactor;
+            Log.d(TAG,"当前放大倍数"+mCurrentScale);
+            Log.d(TAG,"mImageInfo放大倍数"+mImageInfo.getGestureScale());
 
+            mImageInfo.setGestureScale(mImageInfo.getGestureScale() * mScaleFactor);//设置当前放大倍数
+            Log.d(TAG, "mCurrentScale" + mCurrentScale);
+            // Don't let the object get too small or too large.
+            mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, MAX_SCALE));
             zoomTo(mScaleFactor, detector.getFocusX(), detector.getFocusY());
             invalidate();
             return true;
