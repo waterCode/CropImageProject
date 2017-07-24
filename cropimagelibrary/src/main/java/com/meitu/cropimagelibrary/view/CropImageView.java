@@ -136,6 +136,14 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         }
     }
 
+
+    public void setScaleEnable(boolean mScaleEnable) {
+        this.mScaleEnable = mScaleEnable;
+    }
+
+    public void setRotateEnable(boolean mRotateEnable) {
+        this.mRotateEnable = mRotateEnable;
+    }
     /**
      * 检车是否越界
      */
@@ -289,16 +297,6 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     }
 
-    /**
-     * 复原Image到最初的位置
-     */
-    private void resetImage() {
-        Log.d(TAG, "resetImage");
-        mDisplayMatrix.set(mBaseMatrix);
-        setImageMatrix(mDisplayMatrix);
-        invalidate();
-    }
-
 
     /**
      * 移动Bitmap的位置
@@ -381,12 +379,12 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         if (getDrawable() != null) {
             logMatrixInfo(getImageMatrix());
             if (mImageInfo == null) {//第一次才需要记录，最开始高宽和长度，和放大倍数
-                SetImageInfo();
+                setImageInfo();
             }
         }
     }
 
-    private void SetImageInfo() {
+    private void setImageInfo() {
         Matrix matrix = getImageMatrix();
         matrix.getValues(mMatrixValue);
         mImageInfo = new ImageInfo(getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight(), mMatrixValue[Matrix.MSCALE_X]);
@@ -462,8 +460,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     public Bitmap cropAndSaveImage() {
         Bitmap bitmap = getImageBitmap();
-        Bitmap currentBigBitmap = null, originBitmapFromUri = null;
-        float initScale = 1;
+        Bitmap originBitmapFromUri = null;
+        float initScale;
         if (bitmap != null) {
             //当前的大图
             //currentBigBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), mDisplayMatrix, true);
@@ -477,7 +475,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         //此时已经拿到最初的放大倍数
 
         //求出裁剪框和大图的相对位置dx,dy;
-        if (bitmap != null) {
+        if (bitmap != null && originBitmapFromUri != null){
+
             getBitmapRectf(mDisplayMatrix);//mBitmapRectf就代表当前矩阵
             //获得旋转后的图片
             Matrix rotateMatrix = new Matrix();
@@ -491,9 +490,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             int dy = (int) ((mCropRectF.top - mBitmapRectF.top) / initScale);
             int width = (int) ((int) mCropRectF.width() / initScale);
             int height = (int) ((int) mCropRectF.height() / initScale);
-            Bitmap outBitmap = Bitmap.createBitmap(originBitmapFromUri, dx, dy, width, height);//这个为输出文件
-            return outBitmap;
-        } else {
+            return Bitmap.createBitmap(originBitmapFromUri, dx, dy, width, height);//这个为输出文件
+        } else{
             return null;
         }
     }

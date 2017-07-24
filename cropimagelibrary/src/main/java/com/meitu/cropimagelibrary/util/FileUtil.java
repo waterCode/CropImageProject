@@ -24,7 +24,7 @@ public class FileUtil {
         try {
             File file = new File(Environment.getExternalStoragePublicDirectory("image_crop_sample"), "");
             if (!file.exists()) {
-                file.mkdir();
+                boolean isSuccess = file.mkdir();
             }
 
             bitmapFile = new File(file, "IMG_" + (new SimpleDateFormat("yyyyMMddHHmmss")).format(Calendar.getInstance().getTime()) + ".jpg");
@@ -54,6 +54,7 @@ public class FileUtil {
                     fileOutputStream.flush();
                     fileOutputStream.close();
                 } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         }
