@@ -9,7 +9,10 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -18,6 +21,12 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 
 import com.meitu.cropimagelibrary.info.ImageInfo;
+import com.meitu.cropimagelibrary.util.ImageLoadUtil;
+import com.meitu.cropimagelibrary.util.RectUtils;
+import com.meitu.cropimagelibrary.util.RotationGestureDetector;
+
+import java.io.FileNotFoundException;
+import java.util.Arrays;
 
 /**
  * Created by zmc on 2017/7/18.
@@ -26,15 +35,19 @@ import com.meitu.cropimagelibrary.info.ImageInfo;
 public class CropImageView extends android.support.v7.widget.AppCompatImageView {
 
 
-    private static final String DEFAULT_BACKGROUND_COLOR_ID = "#99000000";
+    private static final String DEFAULT_BACKGROUND_COLOR_ID = "#99000000";//超过裁剪部分的矩形框
     private static final String TAG = "CropImageView";
+    private float MAX_SCALE = 3f;
+    private boolean mScaleEnable = true;
+    private boolean mRotateEnable = true;
 
 
     private Matrix mBaseMatrix = new Matrix();
     private Matrix mDisplayMatrix = new Matrix();
+    private Matrix mTempMatrix = new Matrix();
 
     private RectF mCropRectF = new RectF();//裁剪框矩形区域
-    private RectF mBitmapRectF = new RectF();
+    private RectF mBitmapRectF = new RectF();//当前的矩形区域
 
     private Paint mTransParentLayerPaint;//暗色区域背景
     private Paint mWhiteCropPaint;
@@ -42,6 +55,9 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     private ScaleGestureDetector mScaleGestureDetector;
     private GestureDetector mGestureDetector;
+    private RotationGestureDetector mRotationGestureDetector;
+
+    private float mMidPntX, mMidPntY;//手指中心点
 
 
     private float[] mMatrixValue = new float[9];
@@ -49,6 +65,11 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     private ImageInfo mImageInfo;//最开始图片信息,好像可以删掉
 
     private PointF mImageCenterPoint = new PointF();
+
+
+    private float[] mCurrentImageCorners = new float[8];//用来存放当前顶点坐标啊
+    private float[] mInitImageCorners = new float[8];
+    private Uri mUri;
 
     public CropImageView(Context context) {
         this(context, null, 0);
@@ -74,19 +95,32 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
         mScaleGestureDetector = new ScaleGestureDetector(getContext(), new ScaleListener());
         mGestureDetector = new GestureDetector(getContext(), new GestureListener());
+        mRotationGestureDetector = new RotationGestureDetector(new RotationListener());
+
     }
 
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        mScaleGestureDetector.onTouchEvent(event);
+
+        if (event.getPointerCount() > 1) {
+            mMidPntX = (event.getX(0) + event.getX(1)) / 2;//算出中心点
+            mMidPntY = (event.getY(0) + event.getY(1)) / 2;
+        }
+
+        if (mScaleEnable) {
+            mScaleGestureDetector.onTouchEvent(event);
+        }
+        if (mRotateEnable) {
+            mRotationGestureDetector.onTouchEvent(event);
+        }
+
         if (!mScaleGestureDetector.isInProgress()) {
             //检测拖动
             mGestureDetector.onTouchEvent(event);
         }
 
-        int action = event.getAction();
-        if (action == MotionEvent.ACTION_UP) {//松手动手
+        if ((event.getAction() & MotionEvent.ACTION_MASK) == MotionEvent.ACTION_UP) {//松手动手
             checkImagePosition();
         }
         return true;
@@ -107,30 +141,129 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      */
     private void checkImagePosition() {
         Log.d(TAG, "checkImagePosition");
-        getBitmapRectf(mDisplayMatrix);//拿到此时图片位置
-        if (mBitmapRectF.width() < mCropRectF.width() || mBitmapRectF.height() < mCropRectF.height()) {//缩小到太小回到初始化
-            resetImage();
-        } else {
-
-            float dx = 0, dy = 0;
-            //检查其他4个边界，最多有两个越界
-            if (mBitmapRectF.left > mCropRectF.left) {//左边界越界
-                dx = mCropRectF.left - mBitmapRectF.left;
-            }
-            if (mBitmapRectF.right < mCropRectF.right) {//右边界越界
-                dx = mCropRectF.right - mBitmapRectF.right;
-            }
-            if (mBitmapRectF.top > mCropRectF.top) {//上边界越界
-                dy = mCropRectF.top - mBitmapRectF.top;
-            }
-            if (mBitmapRectF.bottom < mCropRectF.bottom) {//下边界越界
-                dy = mCropRectF.bottom - mBitmapRectF.bottom;
-            }
-
-            moveImage(dx, dy);
+        if (mImageInfo.getGestureScale() > MAX_SCALE) {
+            backToMaxScale();
         }
+        mDisplayMatrix.mapPoints(mCurrentImageCorners, mInitImageCorners);//求出当前的坐标
+        float dx, dy;//中心便宜距离
+        float deltaScale = 1;
+        getBitmapRectf(mDisplayMatrix);
+        dx = mCropRectF.centerX() - mBitmapRectF.centerX();//拿到需要移动距离
+        dy = mCropRectF.centerY() - mBitmapRectF.centerY();
+        //判断回到中心后能不能回到覆盖
+        mTempMatrix.reset();
+        mTempMatrix.set(mDisplayMatrix);//设置当前的位置
+        mTempMatrix.postTranslate(dx, dy);//回到中心点
+        float[] tempImageCorners = Arrays.copyOf(mInitImageCorners, mInitImageCorners.length);//拷贝一份初始点
+        mTempMatrix.mapPoints(tempImageCorners);//获取移动到中心点的各个坐标
+
+        boolean isWillImageWrapCropBounds = isImageWrapCropBounds(tempImageCorners);
+
+        //可以话只求出移动的距离，否则求出放大倍数
+        if (isWillImageWrapCropBounds) {
+            final float[] imageIndents = calculateImageIndents();
+            dx = -(imageIndents[0] + imageIndents[2]);//估计现在和那个之前的距离
+            dy = -(imageIndents[1] + imageIndents[3]);
+        } else {//表示没有包裹
+            RectF tempCropRect = new RectF(mCropRectF);
+            mTempMatrix.reset();
+            mTempMatrix.setRotate(getCurrentAngle());//摸你旋转角度
+            mTempMatrix.mapRect(tempCropRect);//吧矩形框转到和图像一样的角度
+
+            final float[] currentImageSides = RectUtils.getRectSidesFromCorners(mCurrentImageCorners);//得到分别是宽和高
+
+            deltaScale = Math.max(tempCropRect.width() / currentImageSides[0],
+                    tempCropRect.height() / currentImageSides[1]);
+        }
+        //移动相应的距离
+        mDisplayMatrix.postTranslate(dx, dy);
+        //再放大
+        if (!isWillImageWrapCropBounds) {
+            mDisplayMatrix.postScale(deltaScale, deltaScale, mCropRectF.centerX(), mCropRectF.centerY());
+            //设置imageInfo的放大倍数
+            mImageInfo.setGestureScale(mImageInfo.getGestureScale() * deltaScale);
+        }
+        //设置矩阵并重绘
+        setImageMatrix(mDisplayMatrix);
+        invalidate();
     }
 
+    private void backToMaxScale() {
+        float scale = MAX_SCALE / mImageInfo.getGestureScale();
+        // TODO: 2017/7/21 放大，缩小，中心点问题
+        Log.d(TAG, "要回弹的倍数" + scale + "到最大倍数" + MAX_SCALE);
+        mImageInfo.setGestureScale(MAX_SCALE);
+        mDisplayMatrix.postScale(scale, scale, mCropRectF.centerX(), mCropRectF.centerY());
+        setImageMatrix(mDisplayMatrix);
+        invalidate();
+    }
+
+
+    private float[] calculateImageIndents() {
+        mTempMatrix.reset();
+        mTempMatrix.setRotate(-getCurrentAngle());
+
+        float[] unrotatedImageCorners = Arrays.copyOf(mCurrentImageCorners, mCurrentImageCorners.length);
+        float[] unrotatedCropBoundsCorners = RectUtils.getCornersFromRect(mCropRectF);
+
+        mTempMatrix.mapPoints(unrotatedImageCorners);
+        mTempMatrix.mapPoints(unrotatedCropBoundsCorners);
+
+        RectF unrotatedImageRect = RectUtils.trapToRect(unrotatedImageCorners);
+        RectF unrotatedCropRect = RectUtils.trapToRect(unrotatedCropBoundsCorners);
+
+        float deltaLeft = unrotatedImageRect.left - unrotatedCropRect.left;
+        float deltaTop = unrotatedImageRect.top - unrotatedCropRect.top;
+        float deltaRight = unrotatedImageRect.right - unrotatedCropRect.right;
+        float deltaBottom = unrotatedImageRect.bottom - unrotatedCropRect.bottom;
+
+        float indents[] = new float[4];
+        indents[0] = (deltaLeft > 0) ? deltaLeft : 0;
+        indents[1] = (deltaTop > 0) ? deltaTop : 0;
+        indents[2] = (deltaRight < 0) ? deltaRight : 0;
+        indents[3] = (deltaBottom < 0) ? deltaBottom : 0;
+
+        mTempMatrix.reset();
+        mTempMatrix.setRotate(getCurrentAngle());
+        mTempMatrix.mapPoints(indents);
+
+        return indents;
+    }
+
+    protected boolean isImageWrapCropBounds(float[] imageCorners) {
+        mTempMatrix.reset();
+        mTempMatrix.setRotate(-getCurrentAngle());
+
+        float[] unrotatedImageCorners = Arrays.copyOf(imageCorners, imageCorners.length);
+        mTempMatrix.mapPoints(unrotatedImageCorners);//把矩阵摆正嘛？
+
+        float[] unrotatedCropBoundsCorners = RectUtils.getCornersFromRect(mCropRectF);
+        mTempMatrix.mapPoints(unrotatedCropBoundsCorners);
+
+        return RectUtils.trapToRect(unrotatedImageCorners).contains(RectUtils.trapToRect(unrotatedCropBoundsCorners));
+
+    }
+
+
+    /**
+     * @return - current image rotation angle.
+     */
+    public float getCurrentAngle() {
+        return getMatrixAngle(mDisplayMatrix);
+    }
+
+    /**
+     * This method calculates rotation angle for given Matrix object.
+     */
+    public float getMatrixAngle(@NonNull Matrix matrix) {
+        return (float) -(Math.atan2(getMatrixValue(matrix, Matrix.MSKEW_X),
+                getMatrixValue(matrix, Matrix.MSCALE_X)) * (180 / Math.PI));
+    }
+
+    protected float getMatrixValue(@NonNull Matrix matrix, int valueIndex) {
+        matrix.getValues(mMatrixValue);
+        return mMatrixValue[valueIndex];
+    }
 
     /**
      * 设置成水平镜像
@@ -138,8 +271,9 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     public void setHorizontalMirror() {
         Log.d(TAG, "setHorizontalMirror");
         updateImageCenter();
-        mDisplayMatrix.postScale(-1, 1, mImageCenterPoint.x, mImageCenterPoint.y);
-        mBaseMatrix.postScale(-1, 1, mImageCenterPoint.x, mImageCenterPoint.y);
+        mDisplayMatrix.postScale(-1, 1, mBitmapRectF.centerX(), mBitmapRectF.centerY());
+        //mBaseMatrix.postScale(-1, 1, mCropRectF.centerX(), mCropRectF.centerY());
+
         setImageMatrix(mDisplayMatrix);//为什么每次都要设置
         invalidate();
     }
@@ -194,6 +328,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
             //设置化映射矩阵
             mBitmapRectF.set(0, 0, getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight());
+            // TODO: 2017/7/21 理论上来说不可以在这new对象
+            mInitImageCorners = RectUtils.getCornersFromRect(mBitmapRectF);//获取初始化的点
         }
     }
 
@@ -275,6 +411,12 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         invalidate();
     }
 
+    @Override
+    public void setImageURI(@Nullable Uri uri) {
+        super.setImageURI(uri);
+        mUri = uri;
+    }
+
     public void setDrawable(Drawable drawable) {
         setImageDrawable(drawable);
         requestLayout();
@@ -289,7 +431,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      * @param focusY       放大中心点y坐标
      */
     private void zoomTo(float mScaleFactor, float focusX, float focusY) {
-        mDisplayMatrix.set(mBaseMatrix);
+
         mDisplayMatrix.postScale(mScaleFactor, mScaleFactor, focusX, focusY);
         setImageMatrix(mDisplayMatrix);
     }
@@ -301,6 +443,59 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         Log.d(TAG, "Drawable width " + getDrawable().getIntrinsicWidth() + "Drawable height" + getDrawable().getIntrinsicHeight());
         Log.d(TAG, "BitmapRect " + mBitmapRectF.width() + " Bitmap left " + mBitmapRectF.left);
 
+        RectF r = new RectF(0, 0, 100, 100);
+        Matrix m = new Matrix();
+        m.setRotate(100);
+        m.mapRect(r);
+
+        Log.d(TAG, "rotaeRectWidth" + r.width());
+    }
+
+    /**
+     * @return 返回当前的Bitmap对象
+     */
+    public Bitmap getImageBitmap() {
+        BitmapDrawable bitmapDrawable = (BitmapDrawable) getDrawable();
+        return bitmapDrawable.getBitmap();
+
+    }
+
+    public Bitmap cropAndSaveImage() {
+        Bitmap bitmap = getImageBitmap();
+        Bitmap currentBigBitmap = null, originBitmapFromUri = null;
+        float initScale = 1;
+        if (bitmap != null) {
+            //当前的大图
+            //currentBigBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), mDisplayMatrix, true);
+            try {
+                originBitmapFromUri = ImageLoadUtil.loadImage(getContext().getContentResolver(), mUri, 4000, 4000);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+
+        //此时已经拿到最初的放大倍数
+
+        //求出裁剪框和大图的相对位置dx,dy;
+        if (bitmap != null) {
+            getBitmapRectf(mDisplayMatrix);//mBitmapRectf就代表当前矩阵
+            //获得旋转后的图片
+            Matrix rotateMatrix = new Matrix();
+            rotateMatrix.setRotate(getCurrentAngle());
+            originBitmapFromUri = Bitmap.createBitmap(originBitmapFromUri, 0, 0, originBitmapFromUri.getWidth(), originBitmapFromUri.getHeight(), rotateMatrix, true);
+
+            float scale_x = mBitmapRectF.width() / originBitmapFromUri.getWidth();
+            float scale_y = mBitmapRectF.height() / originBitmapFromUri.getHeight();
+            initScale = Math.min(scale_x, scale_y);
+            int dx = (int) ((mCropRectF.left - mBitmapRectF.left) / initScale);
+            int dy = (int) ((mCropRectF.top - mBitmapRectF.top) / initScale);
+            int width = (int) ((int) mCropRectF.width() / initScale);
+            int height = (int) ((int) mCropRectF.height() / initScale);
+            Bitmap outBitmap = Bitmap.createBitmap(originBitmapFromUri, dx, dy, width, height);//这个为输出文件
+            return outBitmap;
+        } else {
+            return null;
+        }
     }
 
     private class GestureListener extends GestureDetector.SimpleOnGestureListener {
@@ -325,17 +520,38 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
         private float mScaleFactor = 1;
         private static final String TAG = "ScaleListener";
+        private float mCurrentScale = 1;
 
         @Override
         public boolean onScale(ScaleGestureDetector detector) {
-            mScaleFactor *= detector.getScaleFactor();
-            Log.d(TAG, "" + mScaleFactor);
+            mScaleFactor = detector.getScaleFactor();
+            mCurrentScale *= mScaleFactor;
+            Log.d(TAG, "当前放大倍数" + mCurrentScale);
+            Log.d(TAG, "mImageInfo放大倍数" + mImageInfo.getGestureScale());
+
+            mImageInfo.setGestureScale(mImageInfo.getGestureScale() * mScaleFactor);//设置当前放大倍数
+            Log.d(TAG, "mCurrentScale" + mCurrentScale);
             // Don't let the object get too small or too large.
-            mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, 5.0f));
+            mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, MAX_SCALE));
             zoomTo(mScaleFactor, detector.getFocusX(), detector.getFocusY());
             invalidate();
             return true;
         }
     }
 
+    private class RotationListener extends RotationGestureDetector.SimpleOnRotationGestureListener {
+
+        @Override
+        public boolean onRotation(RotationGestureDetector rotationDetector) {
+            float angle = rotationDetector.getAngle();
+            postRotate(angle, mMidPntX, mMidPntY);
+            return super.onRotation(rotationDetector);
+        }
+    }
+
+    private void postRotate(float angle, float x, float y) {
+        mDisplayMatrix.postRotate(angle, x, y);
+        setImageMatrix(mDisplayMatrix);
+        invalidate();
+    }
 }
