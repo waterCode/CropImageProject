@@ -25,7 +25,7 @@ public class ImageInfo {
         return mInitHeight;
     }
 
-    public float getScale() {
+    public float getInitScale() {
         return mInitScale;
     }
 
