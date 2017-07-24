@@ -254,14 +254,31 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
 
     /**
-     * @return - current image rotation angle.
+     * 获得当前的旋转角度
      */
     public float getCurrentAngle() {
         return getMatrixAngle(mDisplayMatrix);
     }
 
     /**
-     * This method calculates rotation angle for given Matrix object.
+     * 获得当前的放大倍数
+     */
+    public float getCurrentScale() {
+        return getMatrixScale(mDisplayMatrix);
+    }
+
+
+    /**
+     * 返回对应举证的放大倍数，x的平方+y的平方，再求根号
+     * @param matrix 所求放大倍数的矩阵
+     * @return 放大倍数
+     */
+    public float getMatrixScale(@NonNull Matrix matrix) {
+        return (float) Math.sqrt(Math.pow(getMatrixValue(matrix, Matrix.MSCALE_X), 2) + Math.pow(getMatrixValue(matrix, Matrix.MSCALE_Y), 2));
+    }
+
+    /**
+     * 获得对应矩阵的旋转角度
      */
     public float getMatrixAngle(@NonNull Matrix matrix) {
         return (float) -(Math.atan2(getMatrixValue(matrix, Matrix.MSKEW_X),
@@ -277,28 +294,31 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      * 设置成水平镜像
      */
     public void setHorizontalMirror() {
-        Log.d(TAG, "setHorizontalMirror");
-        postScale(-1f,1f);
+        Log.d(TAG, "current angele beforeHorizontalMirror"+getCurrentAngle());
+        Log.d(TAG, "current scale beforeHorizontalMirror" +getCurrentScale());
+        postScale(-1f, 1f);
+        Log.d(TAG, "current angele afterHorizontalMirror"+getCurrentAngle());
+        Log.d(TAG, "current scale  afterHorizontalMirror" +getCurrentScale());
     }
 
     /**
      * 设置成水平镜像
      */
     public void setVerticalMirror() {
-        Log.d(TAG, "setHorizontalMirror");
-        postScale(1f,-1f);
+        postScale(1f, -1f);
     }
 
-    public void rightRotate90(){
-        postRotate(90,mCropRectF.centerX(),mCropRectF.centerY());
+    public void rightRotate90() {
+        postRotate(90, mCropRectF.centerX(), mCropRectF.centerY());
     }
 
-    public void leftRotate90(){
-        postRotate(-90,mCropRectF.centerX(),mCropRectF.centerY());
+    public void leftRotate90() {
+        postRotate(-90, mCropRectF.centerX(), mCropRectF.centerY());
     }
 
     /**
      * 放大，以裁剪框为中心
+     *
      * @param sx x轴放大的倍数
      * @param sy y轴放大的倍数
      */
@@ -316,7 +336,6 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         float x = (mBitmapRectF.right + mBitmapRectF.left) / 2;
         float y = (mBitmapRectF.bottom + mBitmapRectF.top) / 2;
         mImageCenterPoint.set(x, y);
-
     }
 
 
@@ -497,7 +516,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         //此时已经拿到最初的放大倍数
 
         //求出裁剪框和大图的相对位置dx,dy;
-        if (bitmap != null && originBitmapFromUri != null){
+        if (bitmap != null && originBitmapFromUri != null) {
 
             getBitmapRectf(mDisplayMatrix);//mBitmapRectf就代表当前矩阵
             //获得旋转后的图片
@@ -513,7 +532,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             int width = (int) ((int) mCropRectF.width() / initScale);
             int height = (int) ((int) mCropRectF.height() / initScale);
             return Bitmap.createBitmap(originBitmapFromUri, dx, dy, width, height);//这个为输出文件
-        } else{
+        } else {
             return null;
         }
     }
@@ -540,17 +559,16 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
         private float mScaleFactor = 1;
         private static final String TAG = "ScaleListener";
-        private float mCurrentScale = 1;
+
 
         @Override
         public boolean onScale(ScaleGestureDetector detector) {
             mScaleFactor = detector.getScaleFactor();
-            mCurrentScale *= mScaleFactor;
-            Log.d(TAG, "当前放大倍数" + mCurrentScale);
+
             Log.d(TAG, "mImageInfo放大倍数" + mImageInfo.getGestureScale());
 
             mImageInfo.setGestureScale(mImageInfo.getGestureScale() * mScaleFactor);//设置当前放大倍数
-            Log.d(TAG, "mCurrentScale" + mCurrentScale);
+
             // Don't let the object get too small or too large.
             mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, MAX_SCALE));
             zoomTo(mScaleFactor, detector.getFocusX(), detector.getFocusY());
