@@ -113,10 +113,12 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
+        mTransFormTaskPool.removeAllTask();
         if (event.getPointerCount() > 1) {
             mMidPntX = (event.getX(0) + event.getX(1)) / 2;//算出中心点
             mMidPntY = (event.getY(0) + event.getY(1)) / 2;
         }
+
 
         if (mScaleEnable) {
             mScaleGestureDetector.onTouchEvent(event);
@@ -176,12 +178,13 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         mTempMatrix.mapPoints(tempImageCorners);//获取移动到中心点的各个坐标
 
         boolean isWillImageWrapCropBounds = isImageWrapCropBounds(tempImageCorners);
-
+        Log.d(TAG,"checkImagePosition"+"假如图片移到中心,是否覆盖裁剪框"+isWillImageWrapCropBounds);
         //可以话只求出移动的距离，否则求出放大倍数
         if (isWillImageWrapCropBounds) {
             final float[] imageIndents = calculateImageIndents();
             dx = -(imageIndents[0] + imageIndents[2]);//估计现在和那个之前的距离
             dy = -(imageIndents[1] + imageIndents[3]);
+            Log.d(TAG,"可以覆盖裁剪框，需要移动距离为"+"dx"+dx+" dy "+ dy);
         } else {//表示没有包裹
             RectF tempCropRect = new RectF(mCropRectF);
             mTempMatrix.reset();
@@ -192,6 +195,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
             deltaScale = Math.max(tempCropRect.width() / currentImageSides[0],
                     tempCropRect.height() / currentImageSides[1]);
+            Log.d(TAG,"checkImagePosition"+"不可以覆盖裁剪框，需要放大倍数为"+"dx"+deltaScale);
         }
 
 
@@ -262,7 +266,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
         float[] unrotatedCropBoundsCorners = RectUtils.getCornersFromRect(mCropRectF);
         mTempMatrix.mapPoints(unrotatedCropBoundsCorners);
-
+        //脑残吧？把图片旋转却旋转框框，
         return RectUtils.trapToRect(unrotatedImageCorners).contains(RectUtils.trapToRect(unrotatedCropBoundsCorners));
 
     }
@@ -434,7 +438,6 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
                 SetImageInfo();
             }
         }
-
         mTransFormTaskPool.onDrawFinish();//回调
     }
 
@@ -665,6 +668,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         }
 
         public void onDrawFinish() {
+
             if (mActive == null) {
                 if (mTaskQueue.size() > 0) {//任务数量大于0
                     mActive = mTaskQueue.poll();
@@ -722,6 +726,12 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
             mView.setImageMatrix(mMatrix);//设置矩阵，重绘
             mView.invalidate();
+        }
+
+        public void removeAllTask() {
+            mActive=null;
+            while (mTaskQueue.size() > 0)
+                mTaskQueue.clear();
         }
     }
 
