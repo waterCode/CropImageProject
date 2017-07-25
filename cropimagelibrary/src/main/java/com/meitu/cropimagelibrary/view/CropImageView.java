@@ -52,6 +52,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     private Matrix mBaseMatrix = new Matrix();
     private Matrix mDisplayMatrix = new Matrix();
     private Matrix mTempMatrix = new Matrix();
+    private Matrix mMirrorMatrix = new Matrix();
+    private Matrix mConcatMatrix = new Matrix();
 
     private RectF mCropRectF = new RectF();//裁剪框矩形区域
     private RectF mBitmapRectF = new RectF();//当前的矩形区域
@@ -316,10 +318,21 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     public void setHorizontalMirror() {
         Log.d(TAG, "current angele beforeHorizontalMirror" + getCurrentAngle());
         Log.d(TAG, "current scale beforeHorizontalMirror" + getCurrentScale());
-        postScale(-1f, 1f, false);
+        mMirrorMatrix.postScale(-1f,1f,mCropRectF.centerX(),mCropRectF.centerY());
+        setImageMatrix(getConcatMatrix());
+        invalidate();
         Log.d(TAG, "current angele afterHorizontalMirror" + getCurrentAngle());
         Log.d(TAG, "current scale  afterHorizontalMirror" + getCurrentScale());
     }
+
+    public Matrix getConcatMatrix(){
+        mConcatMatrix.reset();
+        mConcatMatrix.set(mDisplayMatrix);
+        mConcatMatrix.postConcat(mMirrorMatrix);
+        return mConcatMatrix;
+    }
+
+
 
     /**
      * 设置成水平镜像
@@ -428,6 +441,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     @Override
     protected void onDraw(Canvas canvas) {
+        Log.d(TAG,"onDraw");
         super.onDraw(canvas);
         drawTransParentLayer(canvas);
         drawCropRect(canvas);
