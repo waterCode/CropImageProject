@@ -31,6 +31,7 @@ import com.meitu.cropimagelibrary.util.RotationGestureDetector;
 
 import java.io.FileNotFoundException;
 import java.util.Arrays;
+import java.util.IllegalFormatCodePointException;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -44,6 +45,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     private static final String DEFAULT_BACKGROUND_COLOR_ID = "#99000000";//超过裁剪部分的矩形框
     private static final String TAG = "CropImageView";
     private static final long DEFAULT_ANIMATION_TIME = 500;
+    private static  boolean HORIZONTALMIRROR = false;
+    private static  boolean VERTIVALMIRROR = false;
     private float MAX_SCALE = 3f;
     private boolean mScaleEnable = true;
     private boolean mRotateEnable = true;
@@ -223,7 +226,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         Log.d(TAG, "要回弹的倍数" + scale + "到最大倍数" + MAX_SCALE);
         mImageInfo.setGestureScale(MAX_SCALE);
         mDisplayMatrix.postScale(scale, scale, mCropRectF.centerX(), mCropRectF.centerY());
-        setImageMatrix(mDisplayMatrix);
+        setImageMatrix(getConcatMatrix());
         invalidate();
     }
 
@@ -316,13 +319,13 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      * 设置成水平镜像
      */
     public void setHorizontalMirror() {
-        Log.d(TAG, "current angele beforeHorizontalMirror" + getCurrentAngle());
-        Log.d(TAG, "current scale beforeHorizontalMirror" + getCurrentScale());
+
+
         mMirrorMatrix.postScale(-1f,1f,mCropRectF.centerX(),mCropRectF.centerY());
         setImageMatrix(getConcatMatrix());
+        HORIZONTALMIRROR =true;
         invalidate();
-        Log.d(TAG, "current angele afterHorizontalMirror" + getCurrentAngle());
-        Log.d(TAG, "current scale  afterHorizontalMirror" + getCurrentScale());
+
     }
 
     public Matrix getConcatMatrix(){
@@ -338,7 +341,10 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      * 设置成水平镜像
      */
     public void setVerticalMirror() {
-        postScale(1f, -1f, false);
+        mMirrorMatrix.postScale(1f,-1f,mCropRectF.centerX(),mCropRectF.centerY());
+        setImageMatrix(getConcatMatrix());
+        VERTIVALMIRROR =true;
+        invalidate();
     }
 
     public void rightRotate90() {
@@ -374,7 +380,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      */
     private void moveImage(float dx, float dy) {
         mDisplayMatrix.postTranslate(dx, dy);
-        setImageMatrix(mDisplayMatrix);
+        setImageMatrix(getConcatMatrix());
         invalidate();
     }
 
@@ -390,7 +396,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             getProperMatrix(mBaseMatrix);//获取矩阵，用来设置矩阵
             //拷贝矩阵
             mDisplayMatrix.set(mBaseMatrix);
-            setImageMatrix(mDisplayMatrix);
+            setImageMatrix(getConcatMatrix());
 
             //设置化映射矩阵
             mBitmapRectF.set(0, 0, getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight());
@@ -502,7 +508,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     private void zoomTo(float mScaleFactor, float focusX, float focusY) {
 
         mDisplayMatrix.postScale(mScaleFactor, mScaleFactor, focusX, focusY);
-        setImageMatrix(mDisplayMatrix);
+        setImageMatrix(getConcatMatrix());
     }
 
     private void logMatrixInfo(Matrix matrix) {
@@ -574,6 +580,13 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             if (e1 == null || e2 == null) return false;
             if (e1.getPointerCount() > 1 || e2.getPointerCount() > 1) return false;
             if (mScaleGestureDetector.isInProgress()) return false;
+            // TODO: 2017/7/25 如果改成先镜像后移动应该可以解决这个问题
+            if (HORIZONTALMIRROR){//设置了水平镜像,往反方向移动，以为镜像是以裁剪框为中心的
+                distanceX = -distanceX;
+            }
+            if (VERTIVALMIRROR){//设置了水平镜像,往反方向移动，以为镜像是以裁剪框为中心的
+                distanceY = -distanceY;
+            }
             CropImageView.this.onScroll(distanceX, distanceY);
             return true;
         }
@@ -626,7 +639,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
         } else {
             mDisplayMatrix.postRotate(angle, centerX, centerY);
-            setImageMatrix(mDisplayMatrix);
+            setImageMatrix(getConcatMatrix());
             invalidate();
         }
 
@@ -644,7 +657,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             mTransFormTaskPool.postTask(scaleTask);
         } else {
             mDisplayMatrix.postScale(sx, sy, mCropRectF.centerX(), mCropRectF.centerY());
-            setImageMatrix(mDisplayMatrix);//为什么每次都要设置
+            setImageMatrix(getConcatMatrix());//为什么每次都要设置
             invalidate();
         }
     }
@@ -655,7 +668,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             mTransFormTaskPool.postTask(task);
         } else {
             mDisplayMatrix.postTranslate(dx, dy);
-            setImageMatrix(mDisplayMatrix);
+            setImageMatrix(getConcatMatrix());
             invalidate();
         }
     }
@@ -738,7 +751,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
             }
 
-            mView.setImageMatrix(mMatrix);//设置矩阵，重绘
+            mView.setImageMatrix(mView.getConcatMatrix());//设置矩阵，重绘
             mView.invalidate();
         }
 
