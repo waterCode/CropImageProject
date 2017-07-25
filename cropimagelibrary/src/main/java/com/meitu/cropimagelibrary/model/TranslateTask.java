@@ -23,6 +23,7 @@ public class TranslateTask extends TransFormTask {
 
 
     public TranslateParams getTranslateParams() {
+        init();
 
         float dTime = System.currentTimeMillis() - startTime;
         Log.d(TAG, "间隔间隔" + dTime + "动画时间duration" + duration);

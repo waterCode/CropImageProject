@@ -10,19 +10,27 @@ public abstract class TransFormTask {
     protected long endTime;
     protected long duration;
     protected boolean isFinished = false;
+    protected boolean hasStart = false;
 
     public static final int TRANSFORM_ROTATE = 1;
     public static final int TRANSFORM_TRANSLATE = 2;
     public static final int TRANSFORM_SCALE = 3;
 
     public TransFormTask(long duration) {
-        startTime = System.currentTimeMillis();
         this.duration = duration;
-        endTime = startTime + duration;
+
     }
 
-    public boolean isFinish(){
+    public boolean isFinish() {
         return isFinished;
+    }
+
+    protected void init() {
+        if(!hasStart){
+            startTime =System.currentTimeMillis();
+            endTime =startTime+duration;
+            hasStart =true;
+        }
     }
 
     public abstract int getTaskId();

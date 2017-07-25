@@ -21,6 +21,8 @@ public class RotateTask extends TransFormTask{
 
 
     public float getAngel() {
+        init();
+
         long dTime = System.currentTimeMillis()-startTime;
         float angel = mAngel*dTime/duration;//根据当前时间来判定需要多少angel
         if(Math.abs(angel)>Math.abs(mAngel)){
