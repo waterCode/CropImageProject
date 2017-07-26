@@ -42,7 +42,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     private static final long DEFAULT_ANIMATION_TIME = 500;
     private boolean HORIZONTALMIRROR = false;
     private boolean VERTIVALMIRROR = false;
-    private float MAX_SCALE = 3f;
+    private float MAX_SCALE = 2f;
 
 
     private float MIN_SCALE = 0.8f;
@@ -272,7 +272,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      * 检车是否越界
      */
     private void checkImagePosition() {
-        Log.d(TAG, "checkImagePosition");
+        Log.d(TAG, "现在放大倍数为：" + getCurrentScale() + "初始的放大倍数为：" + mImageInfo.getInitScale());
         if (getCurrentScale() > MAX_SCALE) {
             backToMaxScale();
         }
@@ -394,8 +394,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      * 获得当前的放大倍数
      */
     public float getCurrentScale() {
-        float disPlayScale = getMatrixScale(mDisplayMatrix);
-        return disPlayScale / mImageInfo.getInitScale();
+        float displayScale = getMatrixScale(mDisplayMatrix);
+        return displayScale / mImageInfo.getInitScale();
     }
 
 
@@ -404,7 +404,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      * @return 放大倍数
      */
     public float getMatrixScale(@NonNull Matrix matrix) {
-        return getMatrixValue(matrix, Matrix.MSCALE_X);
+        return (float) Math.sqrt(Math.pow(getMatrixValue(matrix, Matrix.MSCALE_X), 2) + Math.pow(getMatrixValue(matrix, Matrix.MSKEW_Y), 2));
     }
 
     /**
@@ -516,10 +516,10 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     /**
      * 获取让图片移动并居中到裁剪框的举证
      *
-     * @param displayMatrix 展示用的矩阵
+     * @param baseMatrix 展示用的矩阵
      */
-    private void getProperMatrix(Matrix displayMatrix) {
-        displayMatrix.reset();
+    private void getProperMatrix(Matrix baseMatrix) {
+        baseMatrix.reset();
         Drawable drawable = getDrawable();
         float intrinsicWidth = drawable.getIntrinsicWidth();
         float intrinsicHeight = drawable.getIntrinsicHeight();
@@ -542,13 +542,13 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             moveX = (cropRectWidth - scale * intrinsicWidth) / 2;
             moveY = mCropRectF.top;
         }
-        displayMatrix.postScale(scale, scale);//设置恰当的放大倍数
-        displayMatrix.postTranslate(moveX, moveY);
+        baseMatrix.postScale(scale, scale);//设置恰当的放大倍数
+        baseMatrix.postTranslate(moveX, moveY);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        Log.d(TAG, "onDraw");
+        Log.d(TAG,mDisplayMatrix.toString());
         super.onDraw(canvas);
         drawTransParentLayer(canvas);
         drawCropRect(canvas);
@@ -562,9 +562,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     }
 
     private void setImageInfo() {
-        Matrix matrix = getImageMatrix();
-        matrix.getValues(mMatrixValue);
-        mImageInfo = new ImageInfo(getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight(), mMatrixValue[Matrix.MSCALE_X]);
+
+        mImageInfo = new ImageInfo(getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight(), getMatrixScale(mDisplayMatrix));
     }
 
     private void drawTransParentLayer(Canvas canvas) {
@@ -705,7 +704,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
             // Don't let the object get too small or too large.
             mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, MAX_SCALE));
-            //mScaleFactor = checkScale(mScaleFactor);
+            mScaleFactor = checkScale(mScaleFactor);
             Log.d(TAG, "最终手势放大的放大倍数postScale为" + mScaleFactor);
             postScale(mScaleFactor, detector.getFocusX(), detector.getFocusY());
             mImageInfo.setGestureScale(mImageInfo.getGestureScale() * mScaleFactor);//设置当前放大倍数
@@ -733,7 +732,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         public boolean onRotation(RotationGestureDetector rotationDetector) {
             float angle = rotationDetector.getAngle();
             postRotate(angle, mMidPntX, mMidPntY);
-            return super.onRotation(rotationDetector);
+            return true;
         }
     }
 
