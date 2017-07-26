@@ -1,5 +1,8 @@
 package com.meitu.cropimagelibrary.view;
 
+import android.animation.Animator;
+import android.animation.PropertyValuesHolder;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -21,19 +24,12 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 
 import com.meitu.cropimagelibrary.info.ImageInfo;
-import com.meitu.cropimagelibrary.model.RotateTask;
-import com.meitu.cropimagelibrary.model.ScaleTask;
-import com.meitu.cropimagelibrary.model.TransFormTask;
-import com.meitu.cropimagelibrary.model.TranslateTask;
 import com.meitu.cropimagelibrary.util.ImageLoadUtil;
 import com.meitu.cropimagelibrary.util.RectUtils;
 import com.meitu.cropimagelibrary.util.RotationGestureDetector;
 
 import java.io.FileNotFoundException;
 import java.util.Arrays;
-import java.util.IllegalFormatCodePointException;
-import java.util.LinkedList;
-import java.util.Queue;
 
 /**
  * Created by zmc on 2017/7/18.
@@ -44,9 +40,9 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     private static final String DEFAULT_BACKGROUND_COLOR_ID = "#99000000";//超过裁剪部分的矩形框
     private static final String TAG = "CropImageView";
-    private static final long DEFAULT_ANIMATION_TIME = 200;
-    private static  boolean HORIZONTALMIRROR = false;
-    private static  boolean VERTIVALMIRROR = false;
+    private static final long DEFAULT_ANIMATION_TIME = 500;
+    private static boolean HORIZONTALMIRROR = false;
+    private static boolean VERTIVALMIRROR = false;
     private float MAX_SCALE = 3f;
     private boolean mScaleEnable = true;
     private boolean mRotateEnable = true;
@@ -83,7 +79,10 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     private float[] mInitImageCorners = new float[8];
     private Uri mUri;//图片的uri
 
-    private TransFormTaskPool mTransFormTaskPool;
+    private TransformAnimator mRotateAnimator;
+    private TransformAnimator mTranslateScaleAnimator;
+    private Animator mCurrentActiveAnimator;
+
 
     public CropImageView(Context context) {
         this(context, null, 0);
@@ -111,14 +110,112 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         mGestureDetector = new GestureDetector(getContext(), new GestureListener());
         mRotationGestureDetector = new RotationGestureDetector(new RotationListener());
 
-        mTransFormTaskPool = new TransFormTaskPool(this, mDisplayMatrix);
+        initAnimator();
+
+    }
+
+    private void initAnimator() {
+        mRotateAnimator = new TransformAnimator();
+        mRotateAnimator.setDuration(DEFAULT_ANIMATION_TIME);
+        mRotateAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                float goalRotate = (float) animation.getAnimatedValue();
+                float postRotate = goalRotate - mRotateAnimator.getLastRote();
+                mRotateAnimator.setLastRote(goalRotate);
+                postRotate(postRotate, mCropRectF.centerX(), mCropRectF.centerY());
+            }
+        });
+        mRotateAnimator.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                mRotateAnimator.setLastRote(0);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                checkImagePosition();
+                mRotateAnimator.setLastRote(0);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+
+        mTranslateScaleAnimator = new TransformAnimator();
+        mTranslateScaleAnimator.setDuration(DEFAULT_ANIMATION_TIME);
+        mTranslateScaleAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                float goalTranslateX = (float) animation.getAnimatedValue(TransformAnimator.PROPERTY_NAME_TRANSLATE_X);
+                float goalTranslateY = (float) animation.getAnimatedValue(TransformAnimator.PROPERTY_NAME_TRANSLATE_Y);
+                float goalScale_XAndY = (float) animation.getAnimatedValue(TransformAnimator.PROPERTY_NAME_SCALE_XANDY);
+                if (Float.isNaN(goalTranslateX)||Float.isNaN(goalTranslateY)||Float.isNaN(goalScale_XAndY)) {
+                    return;
+                }
+                Log.d(TAG, "goalTranslateX：" + goalTranslateX + "goalTranslateY：" + goalTranslateY + "goalScale_XAndY：" + goalScale_XAndY);
+                float postTranslateX = goalTranslateX - mTranslateScaleAnimator.getLastTraslateX();
+                float postTranslateY = goalTranslateY - mTranslateScaleAnimator.getLastTraslateY();
+                float postScaleXAndY = goalScale_XAndY / mTranslateScaleAnimator.getLastScale();
+
+                mTranslateScaleAnimator.setLastTraslateX(goalTranslateX);
+                mTranslateScaleAnimator.setLastTraslateY(goalTranslateY);
+                mTranslateScaleAnimator.setLastScale(goalScale_XAndY);
+                Log.d(TAG, "postTranslateX：" + postTranslateX + "postTranslateY：" + postTranslateY + "postScaleXAndY：" + postScaleXAndY);
+                postTranslateAndScale(postTranslateX, postTranslateY, postScaleXAndY);
+            }
+        });
+        mTranslateScaleAnimator.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                mTranslateScaleAnimator.setLastScale(1);
+                mTranslateScaleAnimator.setLastTraslateX(0);
+                mTranslateScaleAnimator.setLastTraslateY(0);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                mTranslateScaleAnimator.setLastScale(1);
+                mTranslateScaleAnimator.setLastTraslateX(0);
+                mTranslateScaleAnimator.setLastTraslateY(0);
+               // checkImagePosition();
+
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                checkImagePosition();
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+    }
+
+    private void postTranslateAndScale(float translateX, float translateY, float scale_xAndY) {
+        mDisplayMatrix.postTranslate(translateX, translateY);
+        mDisplayMatrix.postScale(scale_xAndY, scale_xAndY, mCropRectF.centerX(), mCropRectF.centerY());
+        setImageMatrix(getConcatMatrix());
     }
 
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
-        mTransFormTaskPool.removeAllTask();
+        if(mCurrentActiveAnimator !=null){
+            mCurrentActiveAnimator.cancel();
+        }
+
         if (event.getPointerCount() > 1) {
             mMidPntX = (event.getX(0) + event.getX(1)) / 2;//算出中心点
             mMidPntY = (event.getY(0) + event.getY(1)) / 2;
@@ -183,13 +280,13 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         mTempMatrix.mapPoints(tempImageCorners);//获取移动到中心点的各个坐标
 
         boolean isWillImageWrapCropBounds = isImageWrapCropBounds(tempImageCorners);
-        Log.d(TAG,"checkImagePosition"+"假如图片移到中心,是否覆盖裁剪框"+isWillImageWrapCropBounds);
+        Log.d(TAG, "checkImagePosition" + "假如图片移到中心,是否覆盖裁剪框" + isWillImageWrapCropBounds);
         //可以话只求出移动的距离，否则求出放大倍数
         if (isWillImageWrapCropBounds) {
             final float[] imageIndents = calculateImageIndents();
             dx = -(imageIndents[0] + imageIndents[2]);//估计现在和那个之前的距离
             dy = -(imageIndents[1] + imageIndents[3]);
-            Log.d(TAG,"可以覆盖裁剪框，需要移动距离为"+"dx"+dx+" dy "+ dy);
+            Log.d(TAG, "可以覆盖裁剪框，需要移动距离为" + "dx" + dx + " dy " + dy);
         } else {//表示没有包裹
             RectF tempCropRect = new RectF(mCropRectF);
             mTempMatrix.reset();
@@ -200,22 +297,23 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
             deltaScale = Math.max(tempCropRect.width() / currentImageSides[0],
                     tempCropRect.height() / currentImageSides[1]);
-            Log.d(TAG,"checkImagePosition"+"不可以覆盖裁剪框，需要放大倍数为"+"dx"+deltaScale);
+            Log.d(TAG, "checkImagePosition" + "不可以覆盖裁剪框，需要放大倍数为" + "dx" + deltaScale);
         }
 
-
-        //移动相应的距离
-        postTranslate(dx, dy, true);
         //再放大
-        if (!isWillImageWrapCropBounds) {
-            postScale(deltaScale, deltaScale, true);
-            /*mDisplayMatrix.postScale(deltaScale, deltaScale, mCropRectF.centerX(), mCropRectF.centerY());
-            //设置imageInfo的放大倍数
-            mImageInfo.setGestureScale(mImageInfo.getGestureScale() * deltaScale);
-            setImageMatrix(mDisplayMatrix);
-            invalidate();*/
+        if (isWillImageWrapCropBounds) {//只移动就可以
+            mTranslateScaleAnimator.setValues(PropertyValuesHolder.ofFloat(TransformAnimator.PROPERTY_NAME_TRANSLATE_X, 0, dx),
+                    PropertyValuesHolder.ofFloat(TransformAnimator.PROPERTY_NAME_TRANSLATE_Y, 0, dy),
+                    PropertyValuesHolder.ofFloat(TransformAnimator.PROPERTY_NAME_SCALE_XANDY, 1f, 1f));//相当于不放大
+            Log.d(TAG, "需要位移x：" + dx + "y:" + dy);
+        } else {
+            mTranslateScaleAnimator.setValues(PropertyValuesHolder.ofFloat(TransformAnimator.PROPERTY_NAME_TRANSLATE_X, 0, dx),
+                    PropertyValuesHolder.ofFloat(TransformAnimator.PROPERTY_NAME_TRANSLATE_Y, 0, dy),
+                    PropertyValuesHolder.ofFloat(TransformAnimator.PROPERTY_NAME_SCALE_XANDY, 1f, deltaScale));//相当于不放大
         }
         //设置矩阵并重绘
+        mCurrentActiveAnimator = mTranslateScaleAnimator;
+        mTranslateScaleAnimator.start();
 
     }
 
@@ -321,14 +419,14 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     public void setHorizontalMirror() {
 
 
-        mMirrorMatrix.postScale(-1f,1f,mCropRectF.centerX(),mCropRectF.centerY());
+        mMirrorMatrix.postScale(-1f, 1f, mCropRectF.centerX(), mCropRectF.centerY());
         setImageMatrix(getConcatMatrix());
-        HORIZONTALMIRROR =!HORIZONTALMIRROR;
+        HORIZONTALMIRROR = !HORIZONTALMIRROR;
         invalidate();
 
     }
 
-    public Matrix getConcatMatrix(){
+    public Matrix getConcatMatrix() {
         mConcatMatrix.reset();
         mConcatMatrix.set(mDisplayMatrix);
         mConcatMatrix.postConcat(mMirrorMatrix);
@@ -336,28 +434,35 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     }
 
 
-
     /**
      * 设置成水平镜像
      */
     public void setVerticalMirror() {
-        mMirrorMatrix.postScale(1f,-1f,mCropRectF.centerX(),mCropRectF.centerY());
+        mMirrorMatrix.postScale(1f, -1f, mCropRectF.centerX(), mCropRectF.centerY());
         setImageMatrix(getConcatMatrix());
-        VERTIVALMIRROR =true;
+        VERTIVALMIRROR = true;
         invalidate();
     }
 
     public void rightRotate90() {
-        postRotate(90, mCropRectF.centerX(), mCropRectF.centerY(), true);
+        postAnyRotate(90f);
+    }
+
+    private void postRotate(float angel, float centerX, float centerY) {
+        mDisplayMatrix.postRotate(angel, centerX, centerY);
+        setImageMatrix(getConcatMatrix());
     }
 
     public void leftRotate90() {
-        postRotate(-90, mCropRectF.centerX(), mCropRectF.centerY(), true);
+        postAnyRotate(-90f);
     }
 
     public void postAnyRotate(float anyAngel) {
-        postRotate(anyAngel, mCropRectF.centerX(), mCropRectF.centerY(), true);
-        checkImagePosition();
+        mRotateAnimator.cancel();
+        mRotateAnimator.setFloatValues(0, anyAngel);
+        mRotateAnimator.setDuration(DEFAULT_ANIMATION_TIME);
+        mCurrentActiveAnimator = mRotateAnimator;
+        mRotateAnimator.start();
     }
 
 
@@ -447,7 +552,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     @Override
     protected void onDraw(Canvas canvas) {
-        Log.d(TAG,"onDraw");
+        Log.d(TAG, "onDraw");
         super.onDraw(canvas);
         drawTransParentLayer(canvas);
         drawCropRect(canvas);
@@ -458,7 +563,6 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
                 SetImageInfo();
             }
         }
-        mTransFormTaskPool.onDrawFinish();//回调
     }
 
     private void SetImageInfo() {
@@ -581,10 +685,10 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             if (e1.getPointerCount() > 1 || e2.getPointerCount() > 1) return false;
             if (mScaleGestureDetector.isInProgress()) return false;
             // TODO: 2017/7/25 如果改成先镜像后移动应该可以解决这个问题
-            if (HORIZONTALMIRROR){//设置了水平镜像,往反方向移动，以为镜像是以裁剪框为中心的
+            if (HORIZONTALMIRROR) {//设置了水平镜像,往反方向移动，以为镜像是以裁剪框为中心的
                 distanceX = -distanceX;
             }
-            if (VERTIVALMIRROR){//设置了水平镜像,往反方向移动，以为镜像是以裁剪框为中心的
+            if (VERTIVALMIRROR) {//设置了水平镜像,往反方向移动，以为镜像是以裁剪框为中心的
                 distanceY = -distanceY;
             }
             CropImageView.this.onScroll(distanceX, distanceY);
@@ -625,25 +729,11 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         @Override
         public boolean onRotation(RotationGestureDetector rotationDetector) {
             float angle = rotationDetector.getAngle();
-            postRotate(angle, mMidPntX, mMidPntY, false);
+            postRotate(angle, mMidPntX, mMidPntY);
             return super.onRotation(rotationDetector);
         }
     }
 
-
-    private void postRotate(float angle, float centerX, float centerY, boolean hasAnimation) {
-        if (hasAnimation) {
-            //代替的是。
-            RotateTask rotateTask = new RotateTask(DEFAULT_ANIMATION_TIME, angle, centerX, centerY);
-            mTransFormTaskPool.postTask(rotateTask);
-
-        } else {
-            mDisplayMatrix.postRotate(angle, centerX, centerY);
-            setImageMatrix(getConcatMatrix());
-            invalidate();
-        }
-
-    }
 
     /**
      * 放大，以裁剪框为中心
@@ -652,9 +742,10 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      * @param sy y轴放大的倍数
      */
     private void postScale(float sx, float sy, boolean needAnimation) {
+
         if (needAnimation) {
-            ScaleTask scaleTask = new ScaleTask(DEFAULT_ANIMATION_TIME, sx, sy, mCropRectF.centerX(), mCropRectF.centerY());
-            mTransFormTaskPool.postTask(scaleTask);
+           /* ScaleTask scaleTask = new ScaleTask(DEFAULT_ANIMATION_TIME, sx, sy, mCropRectF.centerX(), mCropRectF.centerY());
+            mTransFormTaskPool.postTask(scaleTask);*/
         } else {
             mDisplayMatrix.postScale(sx, sy, mCropRectF.centerX(), mCropRectF.centerY());
             setImageMatrix(getConcatMatrix());//为什么每次都要设置
@@ -662,18 +753,62 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         }
     }
 
-    private void postTranslate(float dx, float dy, boolean hasAnimation) {
-        if (hasAnimation) {
-            TranslateTask task = new TranslateTask(DEFAULT_ANIMATION_TIME, dx, dy);
-            mTransFormTaskPool.postTask(task);
-        } else {
-            mDisplayMatrix.postTranslate(dx, dy);
-            setImageMatrix(getConcatMatrix());
-            invalidate();
-        }
+    public void postTranslateAnimation(float dx, float dy, long animationTime) {
+
     }
 
-    private static class TransFormTaskPool {
+    private void postTranslate(float dx, float dy) {
+        mDisplayMatrix.postTranslate(dx, dy);
+        setImageMatrix(getConcatMatrix());
+    }
+
+    class TransformAnimator extends ValueAnimator {
+        public static final String PROPERTY_NAME_TRANSLATE_X = "TRANSLATE_X";
+        public static final String PROPERTY_NAME_TRANSLATE_Y = "TRANSLATE_Y";
+        public static final String PROPERTY_NAME_SCALE_XANDY = "SCALE";
+
+
+        private float mLastRote = 0;
+        private float mLastTranslateX = 0;
+        private float mLastTranslateY = 0;
+        private float mLastScale = 1;
+
+        public float getLastScale() {
+            return mLastScale;
+        }
+
+        public void setLastScale(float mLastScale) {
+            this.mLastScale = mLastScale;
+        }
+
+        private float getLastRote() {
+            return mLastRote;
+        }
+
+
+        public void setLastRote(float mLastRote) {
+            this.mLastRote = mLastRote;
+        }
+
+        public float getLastTraslateX() {
+            return mLastTranslateX;
+        }
+
+        public float getLastTraslateY() {
+            return mLastTranslateY;
+        }
+
+        public void setLastTraslateX(float mLastTraslateX) {
+            this.mLastTranslateX = mLastTraslateX;
+        }
+
+        public void setLastTraslateY(float mLastTraslateY) {
+            this.mLastTranslateY = mLastTraslateY;
+        }
+    }
+    //private static class AnimatorValue
+
+  /*  private static class TransFormTaskPool {
         static Queue<TransFormTask> mTaskQueue = new LinkedList<>();
         static TransFormTask mActive;
         private Matrix mMatrix;
@@ -762,5 +897,5 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
                 mTaskQueue.clear();
         }
     }
-
+*/
 }
