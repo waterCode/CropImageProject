@@ -548,7 +548,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     @Override
     protected void onDraw(Canvas canvas) {
-        Log.d(TAG,mDisplayMatrix.toString());
+        Log.d(TAG, mDisplayMatrix.toString());
         super.onDraw(canvas);
         drawTransParentLayer(canvas);
         drawCropRect(canvas);

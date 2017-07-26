@@ -34,7 +34,7 @@ public class FileUtil {
             fileOutputStream = new FileOutputStream(bitmapFile);
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
             //通知本地扫描，这样可以让图库可以检测到
-            if (mWeakActivity.get() != null){
+            if (mWeakActivity.get() != null) {
                 MediaScannerConnection.scanFile(mWeakActivity.get().getApplicationContext(), new String[]{bitmapFile.getAbsolutePath()}, null, new MediaScannerConnection.MediaScannerConnectionClient() {
                     @Override
                     public void onMediaScannerConnected() {
@@ -43,7 +43,7 @@ public class FileUtil {
 
                     @Override
                     public void onScanCompleted(String path, Uri uri) {
-                        if (mWeakActivity.get()!=null) {
+                        if (mWeakActivity.get() != null) {
                             mWeakActivity.get().runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -53,7 +53,7 @@ public class FileUtil {
                         }
                     }
                 });
-        }
+            }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
