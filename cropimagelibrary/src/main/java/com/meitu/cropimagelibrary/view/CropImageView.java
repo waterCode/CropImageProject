@@ -204,7 +204,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     private void postTranslateAndScale(float translateX, float translateY, float scale_xAndY) {
         mDisplayMatrix.postTranslate(translateX, translateY);
-        mDisplayMatrix.postScale(scale_xAndY, scale_xAndY, mCropRectF.centerX(), mCropRectF.centerY());
+        updateBitmapRectf(mDisplayMatrix);
+        mDisplayMatrix.postScale(scale_xAndY, scale_xAndY, mBitmapRectF.centerX(), mBitmapRectF.centerY());
         setImageMatrix(getConcatMatrix());
     }
 
@@ -269,7 +270,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         mDisplayMatrix.mapPoints(mCurrentImageCorners, mInitImageCorners);//求出当前的坐标
         float dx, dy;//中心便宜距离
         float deltaScale = 1;
-        getBitmapRectf(mDisplayMatrix);
+        updateBitmapRectf(mDisplayMatrix);
         dx = mCropRectF.centerX() - mBitmapRectF.centerX();//拿到需要移动距离
         dy = mCropRectF.centerY() - mBitmapRectF.centerY();
         //判断回到中心后能不能回到覆盖
@@ -286,7 +287,6 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             final float[] imageIndents = calculateImageIndents();
             dx = -(imageIndents[0] + imageIndents[2]);//估计现在和那个之前的距离
             dy = -(imageIndents[1] + imageIndents[3]);
-            Log.d(TAG, "可以覆盖裁剪框，需要移动距离为" + "dx" + dx + " dy " + dy);
         } else {//表示没有包裹
             RectF tempCropRect = new RectF(mCropRectF);
             mTempMatrix.reset();
@@ -305,11 +305,12 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             mTranslateScaleAnimator.setValues(PropertyValuesHolder.ofFloat(TransformAnimator.PROPERTY_NAME_TRANSLATE_X, 0, dx),
                     PropertyValuesHolder.ofFloat(TransformAnimator.PROPERTY_NAME_TRANSLATE_Y, 0, dy),
                     PropertyValuesHolder.ofFloat(TransformAnimator.PROPERTY_NAME_SCALE_XANDY, 1f, 1f));//相当于不放大
-            Log.d(TAG, "需要位移x：" + dx + "y:" + dy);
+            Log.d(TAG, "可以覆盖裁剪框，需要移动距离为" + "dx" + dx + " dy " + dy);
         } else {
             mTranslateScaleAnimator.setValues(PropertyValuesHolder.ofFloat(TransformAnimator.PROPERTY_NAME_TRANSLATE_X, 0, dx),
                     PropertyValuesHolder.ofFloat(TransformAnimator.PROPERTY_NAME_TRANSLATE_Y, 0, dy),
                     PropertyValuesHolder.ofFloat(TransformAnimator.PROPERTY_NAME_SCALE_XANDY, 1f, deltaScale));//相当于不放大
+            Log.d(TAG, "可以覆盖裁剪框，需要移动距离为" + "dx" + dx + " dy " + dy);
         }
         //设置矩阵并重绘
         mCurrentActiveAnimator = mTranslateScaleAnimator;
@@ -466,15 +467,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     }
 
 
-    /**
-     * 更新图片的中心点，可用来镜像的时候使用
-     */
-    private void updateImageCenter() {
-        getBitmapRectf(mDisplayMatrix);//重新获取以下区域
-        float x = (mBitmapRectF.right + mBitmapRectF.left) / 2;
-        float y = (mBitmapRectF.bottom + mBitmapRectF.top) / 2;
-        mImageCenterPoint.set(x, y);
-    }
+
 
 
     /**
@@ -510,7 +503,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         }
     }
 
-    private void getBitmapRectf(Matrix displayMatrix) {
+    private void updateBitmapRectf(Matrix displayMatrix) {
         if (getDrawable() != null) {
             mBitmapRectF.set(0, 0, getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight());
             displayMatrix.mapRect(mBitmapRectF);
@@ -584,11 +577,6 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     }
 
 
-    public void setBitmap(Bitmap bitmap) {
-        setImageBitmap(bitmap);
-        requestLayout();//重新layout刷新布局
-        invalidate();
-    }
 
     @Override
     public void setImageURI(@Nullable Uri uri) {
@@ -658,7 +646,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         //求出裁剪框和大图的相对位置dx,dy;
         if (bitmap != null && originBitmapFromUri != null) {
 
-            getBitmapRectf(mDisplayMatrix);//mBitmapRectf就代表当前矩阵
+            updateBitmapRectf(mDisplayMatrix);//mBitmapRectf就代表当前矩阵
             //获得旋转后的图片
             Matrix rotateMatrix = new Matrix();
             rotateMatrix.setRotate(getCurrentAngle());
@@ -719,7 +707,6 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             // Don't let the object get too small or too large.
             mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, MAX_SCALE));
             zoomTo(mScaleFactor, detector.getFocusX(), detector.getFocusY());
-            invalidate();
             return true;
         }
     }
@@ -735,37 +722,12 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     }
 
 
-    /**
-     * 放大，以裁剪框为中心
-     *
-     * @param sx x轴放大的倍数
-     * @param sy y轴放大的倍数
-     */
-    private void postScale(float sx, float sy, boolean needAnimation) {
 
-        if (needAnimation) {
-           /* ScaleTask scaleTask = new ScaleTask(DEFAULT_ANIMATION_TIME, sx, sy, mCropRectF.centerX(), mCropRectF.centerY());
-            mTransFormTaskPool.postTask(scaleTask);*/
-        } else {
-            mDisplayMatrix.postScale(sx, sy, mCropRectF.centerX(), mCropRectF.centerY());
-            setImageMatrix(getConcatMatrix());//为什么每次都要设置
-            invalidate();
-        }
-    }
 
-    public void postTranslateAnimation(float dx, float dy, long animationTime) {
-
-    }
-
-    private void postTranslate(float dx, float dy) {
-        mDisplayMatrix.postTranslate(dx, dy);
-        setImageMatrix(getConcatMatrix());
-    }
-
-    class TransformAnimator extends ValueAnimator {
-        public static final String PROPERTY_NAME_TRANSLATE_X = "TRANSLATE_X";
-        public static final String PROPERTY_NAME_TRANSLATE_Y = "TRANSLATE_Y";
-        public static final String PROPERTY_NAME_SCALE_XANDY = "SCALE";
+    private class TransformAnimator extends ValueAnimator {
+        private static final String PROPERTY_NAME_TRANSLATE_X = "TRANSLATE_X";
+        private static final String PROPERTY_NAME_TRANSLATE_Y = "TRANSLATE_Y";
+        private static final String PROPERTY_NAME_SCALE_XANDY = "SCALE";
 
 
         private float mLastRote = 0;
@@ -773,11 +735,11 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         private float mLastTranslateY = 0;
         private float mLastScale = 1;
 
-        public float getLastScale() {
+        private float getLastScale() {
             return mLastScale;
         }
 
-        public void setLastScale(float mLastScale) {
+        private void setLastScale(float mLastScale) {
             this.mLastScale = mLastScale;
         }
 
@@ -786,116 +748,25 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         }
 
 
-        public void setLastRote(float mLastRote) {
+        private void setLastRote(float mLastRote) {
             this.mLastRote = mLastRote;
         }
 
-        public float getLastTraslateX() {
+        private float getLastTraslateX() {
             return mLastTranslateX;
         }
 
-        public float getLastTraslateY() {
+        private float getLastTraslateY() {
             return mLastTranslateY;
         }
 
-        public void setLastTraslateX(float mLastTraslateX) {
+        private void setLastTraslateX(float mLastTraslateX) {
             this.mLastTranslateX = mLastTraslateX;
         }
 
-        public void setLastTraslateY(float mLastTraslateY) {
+        private void setLastTraslateY(float mLastTraslateY) {
             this.mLastTranslateY = mLastTraslateY;
         }
     }
-    //private static class AnimatorValue
 
-  /*  private static class TransFormTaskPool {
-        static Queue<TransFormTask> mTaskQueue = new LinkedList<>();
-        static TransFormTask mActive;
-        private Matrix mMatrix;
-        private CropImageView mView;
-
-        public TransFormTaskPool(CropImageView view, Matrix displayMatrix) {
-            mMatrix = displayMatrix;
-            mView = view;
-        }
-
-
-        public void postTask(TransFormTask task) {
-            if (mActive == null) {
-                mActive = task;
-                continueTask(task);
-            } else {
-                mTaskQueue.add(task);
-            }
-        }
-
-        public void onDrawFinish() {
-
-            if (mActive == null) {
-                if (mTaskQueue.size() > 0) {//任务数量大于0
-                    mActive = mTaskQueue.poll();
-                } else {
-                    return;//直接就往下执行
-                }
-            }
-            if (mActive.isFinish()) {
-                //拿下一个任务
-            } else {
-                continueTask(mActive);
-            }
-        }
-
-        private void continueTask(TransFormTask task) {
-            switch (task.getTaskId()) {
-                case TransFormTask.TRANSFORM_ROTATE: {
-                    //旋转任务
-                    if (task instanceof RotateTask) {
-                        float centerX = ((RotateTask) task).getCenterX();
-                        float centerY = ((RotateTask) task).getCenterY();
-                        float angel = ((RotateTask) task).getAngel();
-                        if (task.isFinish()) {
-                            mActive = null;
-                        }
-                        mMatrix.postRotate(angel, centerX, centerY);
-                    }
-                    break;
-                }
-                case TransFormTask.TRANSFORM_TRANSLATE: {
-                    if (task instanceof TranslateTask) {
-                        TranslateTask.TranslateParams params = ((TranslateTask) task).getTranslateParams();
-                        if (task.isFinish()) {
-                            mActive = null;
-                        }
-                        mMatrix.postTranslate(params.x, params.y);
-                        Log.d(TAG, "此次位移" + "dx:" + params.x + "dy:" + params.y);
-                    }
-                    break;
-                }
-                case TransFormTask.TRANSFORM_SCALE: {
-                    if (task instanceof ScaleTask) {
-                        ScaleTask.ScaleParams params = ((ScaleTask) task).getScaleParams();
-                        if (task.isFinish()) {
-                            mActive = null;
-                        }
-                        mMatrix.postScale(params.x, params.y, params.centerX, params.centerY);
-                        Log.d(TAG, "continueTask: " + mMatrix.toString());
-                        Log.d(TAG, "此次最终放大" + "sx:" + params.x + "sy:" + params.y + "放大中心x：" + params.centerX + "y" + params.centerY);
-                    }
-                    break;
-                }
-
-
-            }
-
-            mView.setImageMatrix(mView.getConcatMatrix());//设置矩阵，重绘
-            mView.invalidate();
-        }
-
-        public void removeAllTask() {
-            mActive=null;
-            while (mTaskQueue.size() > 0)
-                mTaskQueue.clear();
-        }
-    }
-*/
 }
