@@ -72,6 +72,7 @@ public class RotationGestureDetector {
             case MotionEvent.ACTION_POINTER_UP:
                 mPointerIndex2 = INVALID_POINTER_INDEX;
                 break;
+            default:break;
         }
         return true;
     }
