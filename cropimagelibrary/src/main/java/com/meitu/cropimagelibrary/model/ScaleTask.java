@@ -16,6 +16,7 @@ public class ScaleTask extends TransFormTask {
     private float mAllSy;
 
     private ScaleParams mParams = new ScaleParams();
+    private ScaleParams mCurrentTimeScaleGoal = new ScaleParams();
     private ScaleParams mHadScale = new ScaleParams();
 
     public ScaleTask(long duration, float sx, float sy, float centerX, float centerY) {
@@ -38,22 +39,22 @@ public class ScaleTask extends TransFormTask {
         Log.d(TAG, "间隔间隔" + dTime + "动画时间duration" + duration);
         float ratio = (dTime / duration);//根据当前时间来判定需要多少angel
         Log.d(TAG, "时间ratio为" + ratio);
-        mParams.x = (mALlSx-1) * ratio + 1;//需要放大到的倍数
-        mParams.y = (mAllSy-1) * ratio + 1;
+        mCurrentTimeScaleGoal.x = (mALlSx-1) * ratio + 1;//需要放大到的倍数
+        mCurrentTimeScaleGoal.y = (mAllSy-1) * ratio + 1;
         Log.d(TAG, "总共需要放大到x:" + mALlSx + "y:" + mAllSy);
         Log.d(TAG,"此时需要放大倍数到 X:" + mParams.x+" Y:"+mParams.y);
         Log.d(TAG, "已经放大倍数到x:" + mHadScale.x + "Y:" + mHadScale.y);
-        if (Math.abs(mParams.x) >= Math.abs(mALlSx) && Math.abs(mParams.y) >= Math.abs(mAllSy)) {//两者都大才拿余下
+        if (Math.abs(mCurrentTimeScaleGoal.x) >= Math.abs(mALlSx) && Math.abs(mCurrentTimeScaleGoal.y) >= Math.abs(mAllSy)) {//两者都大才拿余下
             getLastScale(mParams);//拿到余下的角度
             isFinished = true;//则完成任务
         } else {
             Log.d(TAG, "获取放大1次");
-            mParams.x = mParams.x / mHadScale.x;//减去已经转过的角度，就是需要转过的就角度
-            mParams.y = mParams.y/ mHadScale.y;
+            mParams.x = mCurrentTimeScaleGoal.x / mHadScale.x;//减去已经转过的角度，就是需要转过的就角度
+            mParams.y = mCurrentTimeScaleGoal.y/ mHadScale.y;
         }
+        mHadScale.x = mCurrentTimeScaleGoal.x;
+        mHadScale.y = mCurrentTimeScaleGoal.y;
         Log.d(TAG,"计算出需要放大倍数为 X:" + mParams.x+" Y:"+mParams.y);
-        mHadScale.x = mParams.x;
-        mHadScale.y = mParams.y;
 
 
         return mParams;

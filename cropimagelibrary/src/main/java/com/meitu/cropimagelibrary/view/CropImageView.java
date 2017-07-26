@@ -44,7 +44,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     private static final String DEFAULT_BACKGROUND_COLOR_ID = "#99000000";//超过裁剪部分的矩形框
     private static final String TAG = "CropImageView";
-    private static final long DEFAULT_ANIMATION_TIME = 500;
+    private static final long DEFAULT_ANIMATION_TIME = 200;
     private static  boolean HORIZONTALMIRROR = false;
     private static  boolean VERTIVALMIRROR = false;
     private float MAX_SCALE = 3f;
@@ -323,7 +323,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
         mMirrorMatrix.postScale(-1f,1f,mCropRectF.centerX(),mCropRectF.centerY());
         setImageMatrix(getConcatMatrix());
-        HORIZONTALMIRROR =true;
+        HORIZONTALMIRROR =!HORIZONTALMIRROR;
         invalidate();
 
     }
@@ -653,7 +653,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      */
     private void postScale(float sx, float sy, boolean needAnimation) {
         if (needAnimation) {
-            ScaleTask scaleTask = new ScaleTask(1, sx, sy, mCropRectF.centerX(), mCropRectF.centerY());
+            ScaleTask scaleTask = new ScaleTask(DEFAULT_ANIMATION_TIME, sx, sy, mCropRectF.centerX(), mCropRectF.centerY());
             mTransFormTaskPool.postTask(scaleTask);
         } else {
             mDisplayMatrix.postScale(sx, sy, mCropRectF.centerX(), mCropRectF.centerY());
@@ -743,6 +743,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
                             mActive = null;
                         }
                         mMatrix.postScale(params.x, params.y, params.centerX, params.centerY);
+                        Log.d(TAG, "continueTask: " + mMatrix.toString());
                         Log.d(TAG, "此次最终放大" + "sx:" + params.x + "sy:" + params.y + "放大中心x：" + params.centerX + "y" + params.centerY);
                     }
                     break;
