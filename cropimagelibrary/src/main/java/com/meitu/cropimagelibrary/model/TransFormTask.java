@@ -26,10 +26,10 @@ public abstract class TransFormTask {
     }
 
     protected void init() {
-        if(!hasStart){
-            startTime =System.currentTimeMillis();
-            endTime =startTime+duration;
-            hasStart =true;
+        if (!hasStart) {
+            startTime = System.currentTimeMillis();
+            endTime = startTime + duration;
+            hasStart = true;
         }
     }
 

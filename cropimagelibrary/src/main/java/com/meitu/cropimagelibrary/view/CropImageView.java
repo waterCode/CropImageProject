@@ -75,7 +75,6 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     private ImageInfo mImageInfo;//最开始图片信息,好像可以删掉
 
 
-
     private float[] mCurrentImageCorners = new float[8];//用来存放当前顶点坐标啊
     private float[] mInitImageCorners = new float[8];
     private Uri mUri;//图片的uri
@@ -98,7 +97,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         init();
     }
 
-    private void init() {
+    private void initCropMaterials() {
+
         mTransParentLayerPaint = new Paint();
         mTransParentLayerPaint.setColor(Color.parseColor(DEFAULT_BACKGROUND_COLOR_ID));//设置颜色
 
@@ -106,6 +106,12 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         mWhiteCropPaint.setColor(Color.WHITE);//设置颜色
         mWhiteCropPaint.setStrokeWidth(1);//设置填充宽度
         mWhiteCropPaint.setStyle(Paint.Style.STROKE);//what？？
+    }
+
+    ;
+
+    private void init() {
+        initCropMaterials();
 
         mScaleGestureDetector = new ScaleGestureDetector(getContext(), new ScaleListener());
         mGestureDetector = new GestureDetector(getContext(), new GestureListener());
@@ -484,7 +490,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         super.onLayout(changed, left, top, right, bottom);
         float mThisWidth = getMeasuredWidth();
         float mThisHeight = getMeasuredHeight();
-        // TODO: 2017/7/19 这里表示高一定大于宽
+
         mCropRectF.set(0, (mThisHeight - mThisWidth) / 2, mThisWidth, (mThisHeight + mThisWidth) / 2);//这里初始化好矩形框框的范围
 
         if (getDrawable() != null) {
@@ -495,7 +501,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
             //设置化映射矩阵
             mBitmapRectF.set(0, 0, getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight());
-            // TODO: 2017/7/21 理论上来说不可以在这new对象
+
             mInitImageCorners = RectUtils.getCornersFromRect(mBitmapRectF);//获取初始化的点
         }
     }
