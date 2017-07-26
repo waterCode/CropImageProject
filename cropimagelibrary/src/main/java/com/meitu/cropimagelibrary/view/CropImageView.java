@@ -9,7 +9,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
@@ -41,8 +40,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     private static final String DEFAULT_BACKGROUND_COLOR_ID = "#99000000";//超过裁剪部分的矩形框
     private static final String TAG = "CropImageView";
     private static final long DEFAULT_ANIMATION_TIME = 500;
-    private static boolean HORIZONTALMIRROR = false;
-    private static boolean VERTIVALMIRROR = false;
+    private boolean HORIZONTALMIRROR = false;
+    private boolean VERTIVALMIRROR = false;
     private float MAX_SCALE = 3f;
 
 
@@ -75,7 +74,6 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     private ImageInfo mImageInfo;//最开始图片信息,好像可以删掉
 
-    private PointF mImageCenterPoint = new PointF();
 
 
     private float[] mCurrentImageCorners = new float[8];//用来存放当前顶点坐标啊
@@ -390,14 +388,12 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      * 获得当前的放大倍数
      */
     public float getCurrentScale() {
-        float disPlayScale =  getMatrixScale(mDisplayMatrix);
-        return disPlayScale/mImageInfo.getInitScale();
+        float disPlayScale = getMatrixScale(mDisplayMatrix);
+        return disPlayScale / mImageInfo.getInitScale();
     }
 
 
     /**
-     *
-     *
      * @param matrix 应为这个库xy放大倍数相同，所以只去一个方向放大倍数代表现在放大倍数
      * @return 放大倍数
      */
@@ -554,12 +550,12 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         if (getDrawable() != null) {
             logMatrixInfo(getImageMatrix());
             if (mImageInfo == null) {//第一次才需要记录，最开始高宽和长度，和放大倍数
-                SetImageInfo();
+                setImageInfo();
             }
         }
     }
 
-    private void SetImageInfo() {
+    private void setImageInfo() {
         Matrix matrix = getImageMatrix();
         matrix.getValues(mMatrixValue);
         mImageInfo = new ImageInfo(getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight(), mMatrixValue[Matrix.MSCALE_X]);
@@ -701,11 +697,10 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             mScaleFactor = detector.getScaleFactor();
 
 
-
             // Don't let the object get too small or too large.
             mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, MAX_SCALE));
             //mScaleFactor = checkScale(mScaleFactor);
-            Log.d(TAG,"最终手势放大的放大倍数postScale为"+mScaleFactor);
+            Log.d(TAG, "最终手势放大的放大倍数postScale为" + mScaleFactor);
             postScale(mScaleFactor, detector.getFocusX(), detector.getFocusY());
             mImageInfo.setGestureScale(mImageInfo.getGestureScale() * mScaleFactor);//设置当前放大倍数
             return true;
@@ -714,10 +709,10 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         private float checkScale(float scaleFactor) {
             float finalScale;
             float currentScale = getCurrentScale();
-            Log.d(TAG,"当前的放大倍数"+getCurrentScale());
+            Log.d(TAG, "当前的放大倍数" + getCurrentScale());
             if (currentScale * mScaleFactor <= MIN_SCALE) {//如果超过最小值，则就直接到最小值
 
-                    finalScale = MIN_SCALE / currentScale;
+                finalScale = MIN_SCALE / currentScale;
 
             } else {
                 finalScale = scaleFactor;
