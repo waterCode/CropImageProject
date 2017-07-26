@@ -1,4 +1,12 @@
 apply plugin: 'com.android.application'
+//findbugs静态分析工具
+apply plugin: 'com.meitu.quality.findbugs'
+//pmd静态分析工具
+apply plugin: 'com.meitu.quality.pmd'
+//errorprone编译期分析工具
+apply plugin: 'com.meitu.quality.errorprone'
+//Android Lint配置插件
+apply plugin: 'com.meitu.quality.lint'
 
 android {
     compileSdkVersion 25
@@ -19,6 +27,10 @@ android {
     }
 }
 
+
+easyQuality {
+    abortOnError false
+}
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {

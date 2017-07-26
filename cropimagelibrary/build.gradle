@@ -1,4 +1,12 @@
 apply plugin: 'com.android.library'
+//findbugs静态分析工具
+apply plugin: 'com.meitu.quality.findbugs'
+//pmd静态分析工具
+apply plugin: 'com.meitu.quality.pmd'
+//errorprone编译期分析工具
+apply plugin: 'com.meitu.quality.errorprone'
+//Android Lint配置插件
+apply plugin: 'com.meitu.quality.lint'
 
 android {
     compileSdkVersion 25
@@ -19,6 +27,12 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+}
+
+
+
+easyQuality {
+    abortOnError false
 }
 
 dependencies {
