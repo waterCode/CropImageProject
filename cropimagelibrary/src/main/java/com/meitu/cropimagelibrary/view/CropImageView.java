@@ -237,6 +237,18 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         this.MIN_SCALE = MIN_SCALE;
     }
 
+    /**
+     * 设置最小放大倍数
+     *
+     * @param MAX_SCALE
+     */
+    public void setMaxScale(float MAX_SCALE) {
+        this.MAX_SCALE = MAX_SCALE;
+    }
+
+
+
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
@@ -769,9 +781,9 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             float currentScale = getCurrentScale();
             Log.d(TAG, "当前的放大倍数" + getCurrentScale());
             if (currentScale * mScaleFactor <= MIN_SCALE) {//如果超过最小值，则就直接到最小值
-
                 finalScale = MIN_SCALE / currentScale;
-
+            } else if (currentScale * mScaleFactor >= MAX_SCALE * 1.5f){
+                finalScale = MAX_SCALE * 1.5f / currentScale;
             } else {
                 finalScale = scaleFactor;
             }
