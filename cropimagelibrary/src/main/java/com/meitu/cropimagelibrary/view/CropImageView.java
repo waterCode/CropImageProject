@@ -42,7 +42,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     private static final long DEFAULT_ANIMATION_TIME = 500;
     private boolean HORIZONTALMIRROR = false;
     private boolean VERTIVALMIRROR = false;
-    private float MAX_SCALE = 2f;
+    private float MAX_SCALE = 3f;
 
 
     private float MIN_SCALE = 0.8f;
@@ -97,6 +97,9 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         init();
     }
 
+    /**
+     * 初始化裁剪框和阴影区域的画笔
+     */
     private void initCropMaterials() {
 
         mTransParentLayerPaint = new Paint();
@@ -121,6 +124,9 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     }
 
+    /**
+     * 初始化移动和放大得用的ValueAnimator
+     */
     private void initAnimator() {
         mRotateAnimator = new TransformAnimator();
         mRotateAnimator.setDuration(DEFAULT_ANIMATION_TIME);
@@ -208,6 +214,13 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         });
     }
 
+    /**
+     * 同时位移和放大
+     *
+     * @param translateX
+     * @param translateY
+     * @param scale_xAndY
+     */
     private void postTranslateAndScale(float translateX, float translateY, float scale_xAndY) {
         mDisplayMatrix.postTranslate(translateX, translateY);
         updateBitmapRectf(mDisplayMatrix);
@@ -215,6 +228,11 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         setImageMatrix(getConcatMatrix());
     }
 
+    /**
+     * 设置最小放大倍数
+     *
+     * @param MIN_SCALE
+     */
     public void setMinScale(float MIN_SCALE) {
         this.MIN_SCALE = MIN_SCALE;
     }
@@ -251,13 +269,23 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     }
 
 
+    /**
+     * 放大设置开关
+     * @param mScaleEnable 是否开启
+     */
     public void setScaleEnable(boolean mScaleEnable) {
         this.mScaleEnable = mScaleEnable;
     }
 
+    /**
+     * 旋转开关
+     * @param mRotateEnable 是否开启
+     */
     public void setRotateEnable(boolean mRotateEnable) {
         this.mRotateEnable = mRotateEnable;
     }
+
+
 
     @Override
     public void setScaleType(ScaleType scaleType) {
@@ -330,13 +358,16 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     private void backToMaxScale() {
         float scale = MAX_SCALE / getCurrentScale();
-        // TODO: 2017/7/21 放大，缩小，中心点问题
         Log.d(TAG, "要回弹的倍数" + scale + "到最大倍数" + MAX_SCALE);
         mDisplayMatrix.postScale(scale, scale, mCropRectF.centerX(), mCropRectF.centerY());
         setImageMatrix(getConcatMatrix());
     }
 
 
+    /**
+     * 计算出当图片小于裁剪框时候的间距，即离那个角的平行距离
+     * @return
+     */
     private float[] calculateImageIndents() {
         mTempMatrix.reset();
         mTempMatrix.setRotate(-getCurrentAngle());
@@ -368,6 +399,11 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         return indents;
     }
 
+    /**
+     * 计算是图片是否包裹了裁剪框
+     * @param imageCorners 图片各个角的坐标
+     * @return true表示图片够大如果移动到中心已经包裹裁剪框
+     */
     protected boolean isImageWrapCropBounds(float[] imageCorners) {
         mTempMatrix.reset();
         mTempMatrix.setRotate(-getCurrentAngle());
@@ -433,6 +469,10 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     }
 
+    /**
+     * 连接矩阵，主要将display矩阵和镜像矩阵进行连接
+     * @return 返回合成后的矩阵
+     */
     public Matrix getConcatMatrix() {
         mConcatMatrix.reset();
         mConcatMatrix.set(mDisplayMatrix);
@@ -566,6 +606,10 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         mImageInfo = new ImageInfo(getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight(), getMatrixScale(mDisplayMatrix));
     }
 
+    /**
+     * 绘画阴影区域
+     * @param canvas 画布
+     */
     private void drawTransParentLayer(Canvas canvas) {
         Rect r = new Rect();
         getLocalVisibleRect(r);
@@ -604,6 +648,10 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         setImageMatrix(getConcatMatrix());
     }
 
+    /**
+     * 打印检查log
+     * @param matrix 需要检查的矩阵
+     */
     private void logMatrixInfo(Matrix matrix) {
         matrix.getValues(mMatrixValue);
         Log.d(TAG, "SCALEX：" + mMatrixValue[Matrix.MSCALE_X] + "ScaleY: " + mMatrixValue[Matrix.MSCALE_Y] + "transX "
@@ -628,6 +676,11 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     }
 
+
+    /**
+     * 裁剪并保存图片
+     * @return 返回需要保存图片的BItmap对象
+     */
     public Bitmap cropAndSaveImage() {
         Bitmap bitmap = getImageBitmap();
         Bitmap originBitmapFromUri = null;
