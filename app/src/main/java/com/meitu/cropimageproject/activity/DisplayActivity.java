@@ -3,14 +3,18 @@ package com.meitu.cropimageproject.activity;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 
 import com.meitu.cropimagelibrary.util.FileUtil;
+import com.meitu.cropimagelibrary.util.SaveBitmapCallback;
 import com.meitu.cropimagelibrary.view.CropImageView;
 import com.meitu.cropimageproject.R;
 
+import java.io.File;
 
 
 /**
@@ -38,7 +42,18 @@ public class DisplayActivity extends AppCompatActivity {
                 break;
             case R.id.crop_Image_bt:
                 Bitmap bitmap = mNeedCropView.cropAndSaveImage();
-                FileUtil.bitmapConvertToFile(bitmap,this);
+                File parent = getDefaultDir();
+                FileUtil.bitmapConvertToFile(this, bitmap, parent, new SaveBitmapCallback() {
+                    @Override
+                    public void onSuccess(String path, Uri uri) {
+                        Log.d("hehe","保存成功,Uri:"+uri+" path "+path);
+                    }
+
+                    @Override
+                    public void onFailed() {
+
+                    }
+                });
                 break;
             case R.id.rightRotate_bt:
                 mNeedCropView.postAnyRotate(45);
@@ -53,4 +68,11 @@ public class DisplayActivity extends AppCompatActivity {
     }
 
 
+    public File getDefaultDir() {
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),"crop_iamge");
+        if(!file.exists()){
+            file.mkdir();
+        }
+        return file;
+    }
 }
