@@ -1,10 +1,13 @@
 package com.meitu.cropimageproject.activity;
 
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -29,6 +32,14 @@ public class DisplayActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.display_iamge_activity);
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+        } else {
+            //
+            //finish();
+        }
+
         mNeedCropView = (CropImageView) findViewById(R.id.crop_photo_civ);
         uri = getIntent().getParcelableExtra("uri");
         mNeedCropView.setImageURI(uri);
@@ -46,7 +57,7 @@ public class DisplayActivity extends AppCompatActivity {
                 FileUtil.bitmapConvertToFile(this, bitmap, parent, new SaveBitmapCallback() {
                     @Override
                     public void onSuccess(String path, Uri uri) {
-                        Log.d("hehe","保存成功,Uri:"+uri+" path "+path);
+                        Log.d("hehe", "保存成功,Uri:" + uri + " path " + path);
                     }
 
                     @Override
@@ -63,14 +74,15 @@ public class DisplayActivity extends AppCompatActivity {
                 break;
             case R.id.cancel_crop_activity_bt:
                 finish();
-            default:break;
+            default:
+                break;
         }
     }
 
 
     public File getDefaultDir() {
-        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),"crop_iamge");
-        if(!file.exists()){
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "crop_iamge");
+        if (!file.exists()) {
             file.mkdir();
         }
         return file;

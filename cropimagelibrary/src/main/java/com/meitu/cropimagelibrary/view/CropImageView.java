@@ -112,7 +112,6 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     }
 
 
-
     private void init() {
         initCropMaterials();
 
@@ -217,8 +216,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     /**
      * 同时位移和放大
      *
-     * @param translateX 位移x量
-     * @param translateY 位移y量
+     * @param translateX  位移x量
+     * @param translateY  位移y量
      * @param scale_xAndY 放大x和y的放大倍数
      */
     private void postTranslateAndScale(float translateX, float translateY, float scale_xAndY) {
@@ -245,8 +244,6 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     public void setMaxScale(float MAX_SCALE) {
         this.MAX_SCALE = MAX_SCALE;
     }
-
-
 
 
     @Override
@@ -283,6 +280,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     /**
      * 放大设置开关
+     *
      * @param mScaleEnable 是否开启
      */
     public void setScaleEnable(boolean mScaleEnable) {
@@ -291,12 +289,12 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     /**
      * 旋转开关
+     *
      * @param mRotateEnable 是否开启
      */
     public void setRotateEnable(boolean mRotateEnable) {
         this.mRotateEnable = mRotateEnable;
     }
-
 
 
     @Override
@@ -378,6 +376,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     /**
      * 计算出当图片小于裁剪框时候的间距，即离那个角的平行距离
+     *
      * @return 4个角垂直距离
      */
     private float[] calculateImageIndents() {
@@ -413,6 +412,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     /**
      * 计算是图片是否包裹了裁剪框
+     *
      * @param imageCorners 图片各个角的坐标
      * @return true表示图片够大如果移动到中心已经包裹裁剪框
      */
@@ -483,6 +483,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     /**
      * 连接矩阵，主要将display矩阵和镜像矩阵进行连接
+     *
      * @return 返回合成后的矩阵
      */
     public Matrix getConcatMatrix() {
@@ -620,6 +621,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     /**
      * 绘画阴影区域
+     *
      * @param canvas 画布
      */
     private void drawTransParentLayer(Canvas canvas) {
@@ -662,6 +664,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     /**
      * 打印检查log
+     *
      * @param matrix 需要检查的矩阵
      */
     private void logMatrixInfo(Matrix matrix) {
@@ -691,6 +694,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     /**
      * 裁剪并保存图片
+     *
      * @return 返回需要保存图片的BItmap对象
      */
     public Bitmap cropAndSaveImage() {
@@ -782,7 +786,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             Log.d(TAG, "当前的放大倍数" + getCurrentScale());
             if (currentScale * mScaleFactor <= MIN_SCALE) {//如果超过最小值，则就直接到最小值
                 finalScale = MIN_SCALE / currentScale;
-            } else if (currentScale * mScaleFactor >= MAX_SCALE * 1.5f){
+            } else if (currentScale * mScaleFactor >= MAX_SCALE * 1.5f) {
                 finalScale = MAX_SCALE * 1.5f / currentScale;
             } else {
                 finalScale = scaleFactor;
