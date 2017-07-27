@@ -66,13 +66,6 @@ public class FileUtil {
 
     @Nullable
     private static File createDefaultFolder(Context context, SaveBitmapCallback callback) {
-        /*File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "image_crop_sample");
-        if (!file.exists()) {//如果不存在
-            if (!file.mkdir()) {//创建不成功返回null
-                Log.e("FileUtil","directory create failed");
-                callback.onFailed();
-            }
-        }*/
         File file = new File(context.getFilesDir(), "image_crop_sample");
         if (!file.exists()) {
             if (!file.mkdir()) {
