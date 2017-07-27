@@ -42,10 +42,10 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     private static final long DEFAULT_ANIMATION_TIME = 500;
     private boolean isHorizontalEnable = false;
     private boolean isVerticalEnable = false;
-    private float MAX_SCALE = 3f;
+    private float mMaxScale = 3f;
 
 
-    private float MIN_SCALE = 0.8f;
+    private float mMinScale = 0.8f;
     private boolean mScaleEnable = true;
     private boolean mRotateEnable = true;
 
@@ -233,7 +233,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      * @param MIN_SCALE 最小放大倍数
      */
     public void setMinScale(float MIN_SCALE) {
-        this.MIN_SCALE = MIN_SCALE;
+        this.mMinScale = MIN_SCALE;
     }
 
     /**
@@ -242,7 +242,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      * @param MAX_SCALE 最大放大倍数
      */
     public void setMaxScale(float MAX_SCALE) {
-        this.MAX_SCALE = MAX_SCALE;
+        this.mMaxScale = MAX_SCALE;
     }
 
 
@@ -311,7 +311,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      */
     private void checkImagePosition() {
         Log.d(TAG, "现在放大倍数为：" + getCurrentScale() + "初始的放大倍数为：" + mImageInfo.getInitScale());
-        if (getCurrentScale() > MAX_SCALE) {
+        if (getCurrentScale() > mMaxScale) {
             backToMaxScale();
         }
         mDisplayMatrix.mapPoints(mCurrentImageCorners, mInitImageCorners);//求出当前的坐标
@@ -367,8 +367,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
 
     private void backToMaxScale() {
-        float scale = MAX_SCALE / getCurrentScale();
-        Log.d(TAG, "要回弹的倍数" + scale + "到最大倍数" + MAX_SCALE);
+        float scale = mMaxScale / getCurrentScale();
+        Log.d(TAG, "要回弹的倍数" + scale + "到最大倍数" + mMaxScale);
         mDisplayMatrix.postScale(scale, scale, mCropRectF.centerX(), mCropRectF.centerY());
         setImageMatrix(getConcatMatrix());
     }
@@ -772,7 +772,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
 
             // Don't let the object get too small or too large.
-            mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, MAX_SCALE));
+            mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, mMaxScale));
             mScaleFactor = checkScale(mScaleFactor);
             Log.d(TAG, "最终手势放大的放大倍数postScale为" + mScaleFactor);
             postScale(mScaleFactor, detector.getFocusX(), detector.getFocusY());
@@ -784,10 +784,10 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             float finalScale;
             float currentScale = getCurrentScale();
             Log.d(TAG, "当前的放大倍数" + getCurrentScale());
-            if (currentScale * mScaleFactor <= MIN_SCALE) {//如果超过最小值，则就直接到最小值
-                finalScale = MIN_SCALE / currentScale;
-            } else if (currentScale * mScaleFactor >= MAX_SCALE * 1.5f) {
-                finalScale = MAX_SCALE * 1.5f / currentScale;
+            if (currentScale * mScaleFactor <= mMinScale) {//如果超过最小值，则就直接到最小值
+                finalScale = mMinScale / currentScale;
+            } else if (currentScale * mScaleFactor >= mMaxScale * 1.5f) {
+                finalScale = mMaxScale * 1.5f / currentScale;
             } else {
                 finalScale = scaleFactor;
             }
