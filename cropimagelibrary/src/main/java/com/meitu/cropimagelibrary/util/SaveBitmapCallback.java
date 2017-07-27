@@ -7,7 +7,6 @@ import android.net.Uri;
  */
 
 public interface SaveBitmapCallback {
-    void onSuccess(String path, Uri uri);
 
     void onFailed();
 }

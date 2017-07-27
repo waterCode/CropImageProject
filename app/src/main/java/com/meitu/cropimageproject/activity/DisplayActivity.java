@@ -46,19 +46,20 @@ public class DisplayActivity extends AppCompatActivity {
 
     }
 
+    // TODO: 2017/7/27 线程 
+    // TODO: 2017/7/27 删掉通知媒体库 final
+    // TODO: 2017/7/27 Exif 方向
+    // TODO: 2017/7/27 大尺寸图片oom ，不同阶段
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.set_mirror_image_bt:
                 mNeedCropView.setHorizontalMirror();
                 break;
             case R.id.crop_Image_bt:
+                
                 Bitmap bitmap = mNeedCropView.cropAndSaveImage();
                 File parent = getDefaultDir();
                 FileUtil.bitmapConvertToFile(this, bitmap, parent, new SaveBitmapCallback() {
-                    @Override
-                    public void onSuccess(String path, Uri uri) {
-                        Log.d("hehe", "保存成功,Uri:" + uri + " path " + path);
-                    }
 
                     @Override
                     public void onFailed() {

@@ -50,14 +50,14 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     private boolean mRotateEnable = true;
 
 
-    private Matrix mBaseMatrix = new Matrix();
-    private Matrix mDisplayMatrix = new Matrix();
-    private Matrix mTempMatrix = new Matrix();
-    private Matrix mMirrorMatrix = new Matrix();
-    private Matrix mConcatMatrix = new Matrix();
+    private final Matrix mBaseMatrix = new Matrix();
+    private final Matrix mDisplayMatrix = new Matrix();
+    private final Matrix mTempMatrix = new Matrix();
+    private final Matrix mMirrorMatrix = new Matrix();
+    private final Matrix mConcatMatrix = new Matrix();
 
-    private RectF mCropRectF = new RectF();//裁剪框矩形区域
-    private RectF mBitmapRectF = new RectF();//当前的矩形区域
+    private final RectF mCropRectF = new RectF();//裁剪框矩形区域
+    private final RectF mBitmapRectF = new RectF();//当前的矩形区域
 
     private Paint mTransParentLayerPaint;//暗色区域背景
     private Paint mWhiteCropPaint;
@@ -70,13 +70,13 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     private float mMidPntX, mMidPntY;//手指中心点
 
 
-    private float[] mMatrixValue = new float[9];
+    private final float[] mMatrixValue = new float[9];
 
     private ImageInfo mImageInfo;//最开始图片信息,好像可以删掉
 
 
-    private float[] mCurrentImageCorners = new float[8];//用来存放当前顶点坐标啊
-    private float[] mInitImageCorners = new float[8];
+    private final float[] mCurrentImageCorners = new float[8];//用来存放当前顶点坐标啊
+    private  float[] mInitImageCorners;
     private Uri mUri;//图片的uri
 
     private TransformAnimator mRotateAnimator;
@@ -114,6 +114,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     private void init() {
         initCropMaterials();
+
+        mInitImageCorners = new float[8];
 
         mScaleGestureDetector = new ScaleGestureDetector(getContext(), new ScaleListener());
         mGestureDetector = new GestureDetector(getContext(), new GestureListener());

@@ -11,6 +11,7 @@ import android.util.Log;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
@@ -35,28 +36,16 @@ public class FileUtil {
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
             //通知本地扫描，这样可以让图库可以检测到
 
-            MediaScannerConnection.scanFile(context, new String[]{bitmapFile.getAbsolutePath()}, null, new MediaScannerConnection.MediaScannerConnectionClient() {
-                @Override
-                public void onMediaScannerConnected() {
-
-                }
-
-                @Override
-                public void onScanCompleted(String path, Uri uri) {
-                    Log.d("FileUntil", "onScanCompleted");
-                    callback.onSuccess(path, uri);
-                }
-            });
-
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
+            callback.onFailed();
         } finally {
             if (fileOutputStream != null) {
                 try {
-                    fileOutputStream.flush();
                     fileOutputStream.close();
                 } catch (Exception e) {
                     e.printStackTrace();
+                    callback.onFailed();
                 }
             }
         }
