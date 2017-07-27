@@ -2,7 +2,9 @@ package com.meitu.cropimageproject.activity;
 
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.Nullable;
@@ -25,6 +27,7 @@ import java.io.File;
  */
 
 public class DisplayActivity extends AppCompatActivity {
+    private String TAG = "DisplayActivity";
     private Uri uri;
     private CropImageView mNeedCropView;
 
@@ -46,8 +49,7 @@ public class DisplayActivity extends AppCompatActivity {
 
     }
 
-    // TODO: 2017/7/27 线程 
-    // TODO: 2017/7/27 删掉通知媒体库 final
+    // TODO: 2017/7/27 线程
     // TODO: 2017/7/27 Exif 方向
     // TODO: 2017/7/27 大尺寸图片oom ，不同阶段
     public void onClick(View v) {
@@ -56,16 +58,10 @@ public class DisplayActivity extends AppCompatActivity {
                 mNeedCropView.setHorizontalMirror();
                 break;
             case R.id.crop_Image_bt:
-                
+
                 Bitmap bitmap = mNeedCropView.cropAndSaveImage();
-                File parent = getDefaultDir();
-                FileUtil.bitmapConvertToFile(this, bitmap, parent, new SaveBitmapCallback() {
-
-                    @Override
-                    public void onFailed() {
-
-                    }
-                });
+                SaveFileTask saveFileTask = new SaveFileTask();
+                saveFileTask.execute(bitmap);
                 break;
             case R.id.rightRotate_bt:
                 mNeedCropView.postAnyRotate(45);
@@ -87,5 +83,43 @@ public class DisplayActivity extends AppCompatActivity {
             file.mkdir();
         }
         return file;
+    }
+
+
+    private class SaveFileTask extends AsyncTask<Bitmap, String, File> {
+
+        @Override
+        protected File doInBackground(Bitmap... params) {
+
+            if (params == null && params.length < 1)
+                return null;
+            File parent = getDefaultDir();
+            return FileUtil.bitmapConvertToFile(DisplayActivity.this, params[0], parent, new SaveBitmapCallback() {
+
+                @Override
+                public void onFailed() {
+
+                }
+            });
+        }
+
+
+        @Override
+        protected void onPostExecute(File file) {
+            super.onPostExecute(file);
+            if (file != null) {
+                Log.d(TAG, "图片文件路径为" + file.getAbsolutePath());
+                //通知图库
+                MediaScannerConnection.scanFile(DisplayActivity.this, new String[]{file.getAbsolutePath()}, null, new MediaScannerConnection.OnScanCompletedListener() {
+
+
+                    @Override
+                    public void onScanCompleted(String path, Uri uri) {
+                        Log.d(TAG, "扫描后 path"+ path+" uri :"+uri.toString());
+
+                    }
+                });
+            }
+        }
     }
 }
