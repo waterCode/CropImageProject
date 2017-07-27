@@ -40,8 +40,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     private static final String DEFAULT_BACKGROUND_COLOR_ID = "#99000000";//超过裁剪部分的矩形框
     private static final String TAG = "CropImageView";
     private static final long DEFAULT_ANIMATION_TIME = 500;
-    private boolean HORIZONTALMIRROR = false;
-    private boolean VERTIVALMIRROR = false;
+    private boolean isHorizontalEnable = false;
+    private boolean isVerticalEnable = false;
     private float MAX_SCALE = 3f;
 
 
@@ -111,7 +111,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         mWhiteCropPaint.setStyle(Paint.Style.STROKE);//what？？
     }
 
-    ;
+
 
     private void init() {
         initCropMaterials();
@@ -217,9 +217,9 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     /**
      * 同时位移和放大
      *
-     * @param translateX
-     * @param translateY
-     * @param scale_xAndY
+     * @param translateX 位移x量
+     * @param translateY 位移y量
+     * @param scale_xAndY 放大x和y的放大倍数
      */
     private void postTranslateAndScale(float translateX, float translateY, float scale_xAndY) {
         mDisplayMatrix.postTranslate(translateX, translateY);
@@ -231,7 +231,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     /**
      * 设置最小放大倍数
      *
-     * @param MIN_SCALE
+     * @param MIN_SCALE 最小放大倍数
      */
     public void setMinScale(float MIN_SCALE) {
         this.MIN_SCALE = MIN_SCALE;
@@ -240,7 +240,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     /**
      * 设置最小放大倍数
      *
-     * @param MAX_SCALE
+     * @param MAX_SCALE 最大放大倍数
      */
     public void setMaxScale(float MAX_SCALE) {
         this.MAX_SCALE = MAX_SCALE;
@@ -378,7 +378,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     /**
      * 计算出当图片小于裁剪框时候的间距，即离那个角的平行距离
-     * @return
+     * @return 4个角垂直距离
      */
     private float[] calculateImageIndents() {
         mTempMatrix.reset();
@@ -476,7 +476,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
         mMirrorMatrix.postScale(-1f, 1f, mCropRectF.centerX(), mCropRectF.centerY());
         setImageMatrix(getConcatMatrix());
-        HORIZONTALMIRROR = !HORIZONTALMIRROR;
+        isHorizontalEnable = !isHorizontalEnable;
         invalidate();
 
     }
@@ -499,7 +499,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     public void setVerticalMirror() {
         mMirrorMatrix.postScale(1f, -1f, mCropRectF.centerX(), mCropRectF.centerY());
         setImageMatrix(getConcatMatrix());
-        VERTIVALMIRROR = true;
+        isVerticalEnable = true;
         invalidate();
     }
 
@@ -739,10 +739,10 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             if (e1.getPointerCount() > 1 || e2.getPointerCount() > 1) return false;
             if (mScaleGestureDetector.isInProgress()) return false;
             // TODO: 2017/7/25 如果改成先镜像后移动应该可以解决这个问题
-            if (HORIZONTALMIRROR) {//设置了水平镜像,往反方向移动，以为镜像是以裁剪框为中心的
+            if (isHorizontalEnable) {//设置了水平镜像,往反方向移动，以为镜像是以裁剪框为中心的
                 distanceX = -distanceX;
             }
-            if (VERTIVALMIRROR) {//设置了水平镜像,往反方向移动，以为镜像是以裁剪框为中心的
+            if (isVerticalEnable) {//设置了水平镜像,往反方向移动，以为镜像是以裁剪框为中心的
                 distanceY = -distanceY;
             }
             CropImageView.this.onScroll(distanceX, distanceY);
