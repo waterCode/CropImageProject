@@ -24,6 +24,7 @@ public class FileUtil {
 
     public static File bitmapConvertToFile(Context context, @NonNull Bitmap bitmap, File parent, final SaveBitmapCallback callback) {
 
+
         if (parent == null) {
             parent = createDefaultFolder(context, callback);
         }

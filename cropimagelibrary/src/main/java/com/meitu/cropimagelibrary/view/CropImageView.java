@@ -707,17 +707,16 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             //当前的大图
             //currentBigBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), mDisplayMatrix, true);
             try {
-                originBitmapFromUri = ImageLoadUtil.loadImage(getContext().getContentResolver(), mUri, 4000, 4000);
+                originBitmapFromUri = ImageLoadUtil.loadImage(getContext().getContentResolver(), mUri, Integer.MAX_VALUE, Integer.MAX_VALUE);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
         }
 
         //此时已经拿到最初的放大倍数
-
         //求出裁剪框和大图的相对位置dx,dy;
         if (bitmap != null && originBitmapFromUri != null) {
-
+            Bitmap currentRotatedBitmap;
             updateBitmapRectf(mDisplayMatrix);//mBitmapRectf就代表当前矩阵
             //获得旋转后的图片
             Matrix rotateMatrix = new Matrix();

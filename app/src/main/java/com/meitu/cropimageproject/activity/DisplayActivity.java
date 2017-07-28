@@ -28,7 +28,7 @@ import java.io.File;
 
 public class DisplayActivity extends AppCompatActivity {
     private String TAG = "DisplayActivity";
-    private Uri uri;
+    private Uri uri;//怎么部分重构？
     private CropImageView mNeedCropView;
 
     @Override
@@ -49,7 +49,6 @@ public class DisplayActivity extends AppCompatActivity {
 
     }
 
-    // TODO: 2017/7/27 线程
     // TODO: 2017/7/27 Exif 方向
     // TODO: 2017/7/27 大尺寸图片oom ，不同阶段
     public void onClick(View v) {
@@ -94,6 +93,8 @@ public class DisplayActivity extends AppCompatActivity {
             if (params == null && params.length < 1)
                 return null;
             File parent = getDefaultDir();
+            if(params[0] ==null)
+                return null;
             return FileUtil.bitmapConvertToFile(DisplayActivity.this, params[0], parent, new SaveBitmapCallback() {
 
                 @Override
