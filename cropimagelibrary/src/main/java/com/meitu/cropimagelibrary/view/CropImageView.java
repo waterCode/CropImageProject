@@ -750,10 +750,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     private Bitmap getCurrentRotatedOriginalBitmap(Bitmap originBitmap) throws OutOfMemoryError {
         updateBitmapRectf(mDisplayMatrix);//mBitmapRectf就代表当前矩阵
         //获得旋转后的图片
-        Matrix rotateMatrix = new Matrix();
-        rotateMatrix.setRotate(getCurrentAngle());
-        return Bitmap.createBitmap(originBitmap, 0, 0, originBitmap.getWidth(), originBitmap.getHeight(), rotateMatrix, true);
-
+        return ImageLoadUtil.rotateBitmap(originBitmap,getCurrentAngle());
     }
 
     private class GestureListener extends GestureDetector.SimpleOnGestureListener {

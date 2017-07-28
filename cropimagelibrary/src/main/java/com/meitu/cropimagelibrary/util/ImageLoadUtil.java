@@ -3,7 +3,6 @@ package com.meitu.cropimagelibrary.util;
 import android.content.ContentResolver;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.net.Uri;
@@ -50,7 +49,7 @@ public class ImageLoadUtil {
             e.printStackTrace();
         }
 
-        bitmap = checkBitmapOrientation(contentResolver, uri, bitmap);
+        bitmap = checkBitmapOrientation(contentResolver, uri, bitmap);//这里可能抛出oom
         return bitmap;
 
         // TODO: 2017/7/27 除了打开两次输入流还有其他办法嘛
@@ -60,9 +59,10 @@ public class ImageLoadUtil {
 
     /**
      * 检查图片orientation是否有旋转，没有的话返回原图
+     *
      * @param contentResolver 内容提供器
-     * @param uri 图片的uri
-     * @param bitmap 原图
+     * @param uri             图片的uri
+     * @param bitmap          原图
      * @return 旋转后的图片，如果不需要旋转则返回原图
      */
     private static Bitmap checkBitmapOrientation(ContentResolver contentResolver, Uri uri, Bitmap bitmap) {
@@ -74,7 +74,7 @@ public class ImageLoadUtil {
                 int exifOrientation = exif.getAttributeInt(android.support.media.ExifInterface.TAG_DATETIME_ORIGINAL, ExifInterface.ORIENTATION_NORMAL);
                 int degrees = exifToDegrees(exifOrientation);
                 if (degrees != 0) {
-                    bitmap = rotateBitmap(bitmap,-degrees);//返回旋转后的图片
+                    bitmap = rotateBitmap(bitmap, -degrees);//返回旋转后的图片
                 }
             }
         } catch (FileNotFoundException e) {
@@ -85,20 +85,29 @@ public class ImageLoadUtil {
         return bitmap;
     }
 
-    private static Bitmap rotateBitmap(Bitmap bitmap, int degrees) {
+    public static Bitmap rotateBitmap(Bitmap bitmap, float degrees) {
         Matrix matrix = new Matrix();
+        boolean isSuccess = false;
+        float compressScale = 1;
         Bitmap rotatedBitmap;
-        matrix.setRotate(degrees,bitmap.getWidth()/2,bitmap.getHeight()/2);
-        try {
-            rotatedBitmap = Bitmap.createBitmap(bitmap,0,0,bitmap.getWidth(),bitmap.getHeight(),matrix,true);
-            bitmap =rotatedBitmap;
-        }catch (OutOfMemoryError error){
-            Log.e(TAG,"rotateBitmap out of memory");
-            error.printStackTrace();
-            return bitmap;//返回原图
+        matrix.setRotate(degrees, bitmap.getWidth() / 2, bitmap.getHeight() / 2);
+
+        while (!isSuccess) {//知道压缩到合适的大小
+            try {
+                rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+                bitmap.recycle();//创建成功，回收先
+                bitmap = rotatedBitmap;
+                isSuccess = true;
+            } catch (OutOfMemoryError error) {
+                Log.e(TAG, "rotateBitmap out of memory");
+                error.printStackTrace();
+                compressScale = compressScale * 0.7f;
+                matrix.postScale(compressScale,compressScale,bitmap.getWidth()/2,bitmap.getHeight()/2);
+            }
         }
         return bitmap;
     }
+
 
     private static int exifToDegrees(int exifOrientation) {
         switch (exifOrientation) {
