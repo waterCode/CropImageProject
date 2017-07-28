@@ -76,7 +76,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
 
     private final float[] mCurrentImageCorners = new float[8];//用来存放当前顶点坐标啊
-    private  float[] mInitImageCorners;
+    private float[] mInitImageCorners;
     private Uri mUri;//图片的uri
 
     private TransformAnimator mRotateAnimator;
@@ -702,12 +702,10 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     public Bitmap cropAndSaveImage() {
         Bitmap bitmap = getImageBitmap();
         Bitmap originBitmapFromUri = null;
-        float initScale;
         if (bitmap != null) {
             //当前的大图
-            //currentBigBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), mDisplayMatrix, true);
             try {
-                originBitmapFromUri = ImageLoadUtil.loadImage(getContext().getContentResolver(), mUri, Integer.MAX_VALUE, Integer.MAX_VALUE);
+                originBitmapFromUri = ImageLoadUtil.loadImage(getContext().getContentResolver(), mUri, Integer.MAX_VALUE, Integer.MAX_VALUE);//可能oom
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
@@ -716,24 +714,46 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         //此时已经拿到最初的放大倍数
         //求出裁剪框和大图的相对位置dx,dy;
         if (bitmap != null && originBitmapFromUri != null) {
-            Bitmap currentRotatedBitmap;
-            updateBitmapRectf(mDisplayMatrix);//mBitmapRectf就代表当前矩阵
-            //获得旋转后的图片
-            Matrix rotateMatrix = new Matrix();
-            rotateMatrix.setRotate(getCurrentAngle());
-            originBitmapFromUri = Bitmap.createBitmap(originBitmapFromUri, 0, 0, originBitmapFromUri.getWidth(), originBitmapFromUri.getHeight(), rotateMatrix, true);
-
-            float scale_x = mBitmapRectF.width() / originBitmapFromUri.getWidth();
-            float scale_y = mBitmapRectF.height() / originBitmapFromUri.getHeight();
-            initScale = Math.min(scale_x, scale_y);
-            int dx = (int) ((mCropRectF.left - mBitmapRectF.left) / initScale);
-            int dy = (int) ((mCropRectF.top - mBitmapRectF.top) / initScale);
-            int width = (int) ((int) mCropRectF.width() / initScale);
-            int height = (int) ((int) mCropRectF.height() / initScale);
-            return Bitmap.createBitmap(originBitmapFromUri, dx, dy, width, height);//这个为输出文件
+            Bitmap currentRotatedBitmap = getCurrentRotatedOriginalBitmap(originBitmapFromUri); //,拿到，旋转原图，这里有可能抛出oom
+            return getCropBitmapInOriginalBitmap(currentRotatedBitmap);//拿到裁剪框位置的图片,
         } else {
             return null;
         }
+    }
+
+
+    /**
+     * 拿到裁剪框所在原图的位置
+     * @param currentRotatedBitmap 旋转后的原图
+     * @return 裁剪框所在位置的图片
+     * @throws OutOfMemoryError 内存溢出
+     */
+    public Bitmap getCropBitmapInOriginalBitmap(Bitmap currentRotatedBitmap) throws OutOfMemoryError {
+        float scale_x = mBitmapRectF.width() / currentRotatedBitmap.getWidth();
+        float scale_y = mBitmapRectF.height() / currentRotatedBitmap.getHeight();
+        float initScale = Math.min(scale_x, scale_y);
+        int dx = (int) ((mCropRectF.left - mBitmapRectF.left) / initScale);
+        int dy = (int) ((mCropRectF.top - mBitmapRectF.top) / initScale);
+        int width = (int) ((int) mCropRectF.width() / initScale);
+        int height = (int) ((int) mCropRectF.height() / initScale);
+        return Bitmap.createBitmap(currentRotatedBitmap, dx, dy, width, height);//这个为输出文件
+
+    }
+
+    /**
+     * 产生旋转后的源图片
+     *
+     * @param originBitmap 原图
+     * @return 旋转后的图片
+     * @throws OutOfMemoryError 内存溢出
+     */
+    private Bitmap getCurrentRotatedOriginalBitmap(Bitmap originBitmap) throws OutOfMemoryError {
+        updateBitmapRectf(mDisplayMatrix);//mBitmapRectf就代表当前矩阵
+        //获得旋转后的图片
+        Matrix rotateMatrix = new Matrix();
+        rotateMatrix.setRotate(getCurrentAngle());
+        return Bitmap.createBitmap(originBitmap, 0, 0, originBitmap.getWidth(), originBitmap.getHeight(), rotateMatrix, true);
+
     }
 
     private class GestureListener extends GestureDetector.SimpleOnGestureListener {
