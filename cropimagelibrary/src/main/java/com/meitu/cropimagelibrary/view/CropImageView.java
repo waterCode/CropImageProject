@@ -619,12 +619,6 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     private void setImageInfo() {
 
         mImageInfo = new ImageInfo(getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight(), getMatrixScale(mDisplayMatrix));
-        CropImageView.this.post(new Runnable() {
-            @Override
-            public void run() {
-                //ImageLoadUtil.loadImageFitToSize()
-            }
-        });
     }
 
     /**
@@ -647,14 +641,13 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     @Override
     public void setImageURI(@Nullable Uri uri) {
-        /*super.setImageURI(uri);*/
         mUri = uri;
-       /* try {
-            Bitmap bmp = ImageLoadUtil.loadImage(getContext().getContentResolver(),uri,1000,1000);
+        try {
+            Bitmap bmp = ImageLoadUtil.loadImage(getContext().getContentResolver(),uri,1500,1500);
             setImageBitmap(bmp);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-        }*/
+        }
     }
 
     public void setDrawable(Drawable drawable) {
