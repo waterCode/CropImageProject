@@ -53,8 +53,6 @@ public class ImageLoadUtil {
         return bitmap;
 
         // TODO: 2017/7/27 除了打开两次输入流还有其他办法嘛
-
-
     }
 
     /**

@@ -619,6 +619,12 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     private void setImageInfo() {
 
         mImageInfo = new ImageInfo(getDrawable().getIntrinsicWidth(), getDrawable().getIntrinsicHeight(), getMatrixScale(mDisplayMatrix));
+        CropImageView.this.post(new Runnable() {
+            @Override
+            public void run() {
+                //ImageLoadUtil.loadImageFitToSize()
+            }
+        });
     }
 
     /**
@@ -641,8 +647,14 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     @Override
     public void setImageURI(@Nullable Uri uri) {
-        super.setImageURI(uri);
+        /*super.setImageURI(uri);*/
         mUri = uri;
+       /* try {
+            Bitmap bmp = ImageLoadUtil.loadImage(getContext().getContentResolver(),uri,1000,1000);
+            setImageBitmap(bmp);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }*/
     }
 
     public void setDrawable(Drawable drawable) {
@@ -681,7 +693,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         m.setRotate(100);
         m.mapRect(r);
 
-        Log.d(TAG, "rotaeRectWidth" + r.width());
+        Log.d(TAG, "rotateRectWidth" + r.width());
     }
 
     /**
@@ -714,8 +726,28 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         //此时已经拿到最初的放大倍数
         //求出裁剪框和大图的相对位置dx,dy;
         if (bitmap != null && originBitmapFromUri != null) {
-            Bitmap currentRotatedBitmap = getCurrentRotatedOriginalBitmap(originBitmapFromUri); //,拿到，旋转原图，这里有可能抛出oom
-            return getCropBitmapInOriginalBitmap(currentRotatedBitmap);//拿到裁剪框位置的图片,
+            Matrix matrix = new Matrix();
+            float scale = 1;
+            Bitmap scaledBitmap,resultBitmap=null;
+            boolean isSuccess = false, needScale = false;
+            Bitmap currentRotatedBitmap = getCurrentRotatedOriginalBitmap(originBitmapFromUri); //,拿到旋转图片
+            while (!isSuccess) {
+                try {
+                    if (needScale) {
+                        matrix.postScale(scale, scale, currentRotatedBitmap.getWidth() / 2, currentRotatedBitmap.getHeight() / 2);
+                        scaledBitmap = Bitmap.createBitmap(currentRotatedBitmap, 0, 0, currentRotatedBitmap.getWidth(), currentRotatedBitmap.getHeight(), matrix, true);
+                        currentRotatedBitmap.recycle();
+                        resultBitmap = scaledBitmap;
+                        isSuccess = true;
+                    }
+                    return getCropBitmapInOriginalBitmap(currentRotatedBitmap);//拿到裁剪框位置的图片,
+
+                } catch (OutOfMemoryError e) {
+                    scale = scale * 0.7f;
+                    needScale = true;
+                }
+            }
+            return resultBitmap;
         } else {
             return null;
         }
@@ -724,6 +756,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     /**
      * 拿到裁剪框所在原图的位置
+     *
      * @param currentRotatedBitmap 旋转后的原图
      * @return 裁剪框所在位置的图片
      * @throws OutOfMemoryError 内存溢出
@@ -731,7 +764,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     public Bitmap getCropBitmapInOriginalBitmap(Bitmap currentRotatedBitmap) throws OutOfMemoryError {
         float scale_x = mBitmapRectF.width() / currentRotatedBitmap.getWidth();
         float scale_y = mBitmapRectF.height() / currentRotatedBitmap.getHeight();
-        float initScale = Math.min(scale_x, scale_y);
+        float initScale = Math.min(scale_x, scale_y);//这个裁剪框和要裁剪的原图的长宽比
+        //算出裁剪框所在原图的位置，还有裁剪框映射到原图的长和宽
         int dx = (int) ((mCropRectF.left - mBitmapRectF.left) / initScale);
         int dy = (int) ((mCropRectF.top - mBitmapRectF.top) / initScale);
         int width = (int) ((int) mCropRectF.width() / initScale);
@@ -747,10 +781,10 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      * @return 旋转后的图片
      * @throws OutOfMemoryError 内存溢出
      */
-    private Bitmap getCurrentRotatedOriginalBitmap(Bitmap originBitmap) throws OutOfMemoryError {
+    private Bitmap getCurrentRotatedOriginalBitmap(Bitmap originBitmap) {
         updateBitmapRectf(mDisplayMatrix);//mBitmapRectf就代表当前矩阵
         //获得旋转后的图片
-        return ImageLoadUtil.rotateBitmap(originBitmap,getCurrentAngle());
+        return ImageLoadUtil.rotateBitmap(originBitmap, getCurrentAngle());
     }
 
     private class GestureListener extends GestureDetector.SimpleOnGestureListener {
