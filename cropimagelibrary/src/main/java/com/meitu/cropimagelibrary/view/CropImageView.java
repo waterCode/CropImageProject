@@ -643,8 +643,9 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     public void setImageURI(@Nullable Uri uri) {
         mUri = uri;
         try {
-            Bitmap bmp = ImageLoadUtil.loadImage(getContext().getContentResolver(),uri,1500,1500);
-            setImageBitmap(bmp);
+            Bitmap bmp = ImageLoadUtil.loadImage(getContext().getContentResolver(), uri, 1500, 1500);
+            Bitmap rotatedBitmap = ImageLoadUtil.checkBitmapOrientation(getContext().getContentResolver(), uri, bmp);//检查图片方向
+            setImageBitmap(rotatedBitmap);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -721,12 +722,12 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         if (bitmap != null && originBitmapFromUri != null) {
             Matrix matrix = new Matrix();
             float scale = 1;
-            Bitmap scaledBitmap,resultBitmap=null;
+            Bitmap scaledBitmap, resultBitmap = null;
             boolean isSuccess = false, needScale = false;
             Bitmap currentRotatedBitmap = getCurrentRotatedOriginalBitmap(originBitmapFromUri); //,拿到旋转图片
             while (!isSuccess) {
                 try {
-                    if (needScale) {
+                    if (needScale) {//第一次不需要放大，直接裁剪，
                         matrix.postScale(scale, scale, currentRotatedBitmap.getWidth() / 2, currentRotatedBitmap.getHeight() / 2);
                         scaledBitmap = Bitmap.createBitmap(currentRotatedBitmap, 0, 0, currentRotatedBitmap.getWidth(), currentRotatedBitmap.getHeight(), matrix, true);
                         currentRotatedBitmap.recycle();
@@ -755,6 +756,8 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      * @throws OutOfMemoryError 内存溢出
      */
     public Bitmap getCropBitmapInOriginalBitmap(Bitmap currentRotatedBitmap) throws OutOfMemoryError {
+
+
         float scale_x = mBitmapRectF.width() / currentRotatedBitmap.getWidth();
         float scale_y = mBitmapRectF.height() / currentRotatedBitmap.getHeight();
         float initScale = Math.min(scale_x, scale_y);//这个裁剪框和要裁剪的原图的长宽比
@@ -777,7 +780,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     private Bitmap getCurrentRotatedOriginalBitmap(Bitmap originBitmap) {
         updateBitmapRectf(mDisplayMatrix);//mBitmapRectf就代表当前矩阵
         //获得旋转后的图片
-        return ImageLoadUtil.rotateBitmap(originBitmap, getCurrentAngle());
+        return ImageLoadUtil.rotateBitmap(originBitmap, getCurrentAngle() - ImageLoadUtil.getBitmapOrientation(getContext().getContentResolver(), mUri));
     }
 
     private class GestureListener extends GestureDetector.SimpleOnGestureListener {
