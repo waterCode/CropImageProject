@@ -251,32 +251,36 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
-        if (mCurrentActiveAnimator != null) {
-            mCurrentActiveAnimator.cancel();
-        }
+        if( getImageBitmap() != null) {
+            if (mCurrentActiveAnimator != null) {
+                mCurrentActiveAnimator.cancel();
+            }
 
-        if (event.getPointerCount() > 1) {
-            mMidPntX = (event.getX(0) + event.getX(1)) / 2;//算出中心点
-            mMidPntY = (event.getY(0) + event.getY(1)) / 2;
-        }
+            if (event.getPointerCount() > 1) {
+                mMidPntX = (event.getX(0) + event.getX(1)) / 2;//算出中心点
+                mMidPntY = (event.getY(0) + event.getY(1)) / 2;
+            }
 
 
-        if (mScaleEnable) {
-            mScaleGestureDetector.onTouchEvent(event);
-        }
-        if (mRotateEnable) {
-            mRotationGestureDetector.onTouchEvent(event);
-        }
+            if (mScaleEnable) {
+                mScaleGestureDetector.onTouchEvent(event);
+            }
+            if (mRotateEnable) {
+                mRotationGestureDetector.onTouchEvent(event);
+            }
 
-        if (!mScaleGestureDetector.isInProgress()) {
-            //检测拖动
-            mGestureDetector.onTouchEvent(event);
-        }
+            if (!mScaleGestureDetector.isInProgress()) {
+                //检测拖动
+                mGestureDetector.onTouchEvent(event);
+            }
 
-        if ((event.getAction() & MotionEvent.ACTION_MASK) == MotionEvent.ACTION_UP) {//松手动手
-            checkImagePosition();
+            if ((event.getAction() & MotionEvent.ACTION_MASK) == MotionEvent.ACTION_UP) {//松手动手
+                checkImagePosition();
+            }
+            return true;
+        }else {
+            return false;
         }
-        return true;
     }
 
 
@@ -444,6 +448,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      * 获得当前的放大倍数
      */
     public float getCurrentScale() {
+
         float displayScale = getMatrixScale(mDisplayMatrix);
         return displayScale / mImageInfo.getInitScale();
     }
@@ -520,11 +525,13 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     }
 
     public void postAnyRotate(float anyAngel) {
-        mRotateAnimator.cancel();
-        mRotateAnimator.setFloatValues(0, anyAngel);
-        mRotateAnimator.setDuration(DEFAULT_ANIMATION_TIME);
-        mCurrentActiveAnimator = mRotateAnimator;
-        mRotateAnimator.start();
+        if(getImageBitmap() != null) {
+            mRotateAnimator.cancel();
+            mRotateAnimator.setFloatValues(0, anyAngel);
+            mRotateAnimator.setDuration(DEFAULT_ANIMATION_TIME);
+            mCurrentActiveAnimator = mRotateAnimator;
+            mRotateAnimator.start();
+        }
     }
 
 
@@ -641,13 +648,15 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     @Override
     public void setImageURI(@Nullable Uri uri) {
-        mUri = uri;
-        try {
-            Bitmap bmp = ImageLoadUtil.loadImage(getContext().getContentResolver(), uri, 1500, 1500);
-            Bitmap rotatedBitmap = ImageLoadUtil.checkBitmapOrientation(getContext().getContentResolver(), uri, bmp);//检查图片方向
-            setImageBitmap(rotatedBitmap);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+        if(uri != null) {
+            mUri = uri;
+            try {
+                Bitmap bmp = ImageLoadUtil.loadImage(getContext().getContentResolver(), uri, 1500, 1500);
+                Bitmap rotatedBitmap = ImageLoadUtil.checkBitmapOrientation(getContext().getContentResolver(), uri, bmp);//检查图片方向
+                setImageBitmap(rotatedBitmap);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -695,7 +704,11 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      */
     public Bitmap getImageBitmap() {
         BitmapDrawable bitmapDrawable = (BitmapDrawable) getDrawable();
-        return bitmapDrawable.getBitmap();
+        if(bitmapDrawable != null) {
+            return bitmapDrawable.getBitmap();
+        }else {
+            return null;
+        }
 
     }
 
