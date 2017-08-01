@@ -1,16 +1,15 @@
 package com.meitu.cropimagelibrary.util;
 
-import android.app.Activity;
+import android.content.Context;
 import android.graphics.Bitmap;
-import android.media.MediaScannerConnection;
-import android.net.Uri;
 import android.os.Environment;
 import android.support.annotation.NonNull;
-import android.widget.Toast;
+import android.support.annotation.Nullable;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.lang.ref.WeakReference;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
@@ -20,53 +19,57 @@ import java.util.Calendar;
 
 public class FileUtil {
 
-    public static File bitmapConvertToFile(@NonNull Bitmap bitmap, final Activity activity) {
-        final WeakReference<Activity> mWeakActivity = new WeakReference<>(activity);
-        File file = new File(Environment.getExternalStoragePublicDirectory("image_crop_sample"), "");
-        if (!file.exists()) {//如果不存在
-            if (!file.mkdir()) {//创建不成功返回null
-                return null;
-            }
+
+    public static File bitmapConvertToFile(Context context, @NonNull Bitmap bitmap, File parent, final SaveBitmapCallback callback) {
+
+        if (parent == null) {
+            parent = createDefaultFolder(context, callback);
         }
-        File bitmapFile = new File(file, "IMG_" + (new SimpleDateFormat("yyyyMMddHHmmss")).format(Calendar.getInstance().getTime()) + ".jpg");
+
+        if (parent == null) return null;
+        File bitmapFile = new File(parent, "IMG_" + (new SimpleDateFormat("yyyyMMddHHmmss")).format(Calendar.getInstance().getTime()) + ".jpg");
         FileOutputStream fileOutputStream = null;
         try {
             fileOutputStream = new FileOutputStream(bitmapFile);
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
             //通知本地扫描，这样可以让图库可以检测到
-            if (mWeakActivity.get() != null) {
-                MediaScannerConnection.scanFile(mWeakActivity.get().getApplicationContext(), new String[]{bitmapFile.getAbsolutePath()}, null, new MediaScannerConnection.MediaScannerConnectionClient() {
-                    @Override
-                    public void onMediaScannerConnected() {
 
-                    }
-
-                    @Override
-                    public void onScanCompleted(String path, Uri uri) {
-                        if (mWeakActivity.get() != null) {
-                            mWeakActivity.get().runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Toast.makeText(mWeakActivity.get(), "图片已经保存", Toast.LENGTH_LONG).show();
-                                }
-                            });
-                        }
-                    }
-                });
-            }
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
+            callback.onFailed();
         } finally {
             if (fileOutputStream != null) {
                 try {
-                    fileOutputStream.flush();
                     fileOutputStream.close();
                 } catch (Exception e) {
                     e.printStackTrace();
+                    callback.onFailed();
                 }
             }
         }
 
         return bitmapFile;
+    }
+
+    @Nullable
+    private static File createDefaultFolder(Context context, SaveBitmapCallback callback) {
+        File file = new File(context.getFilesDir(), "image_crop_sample");
+        if (!file.exists()) {
+            if (!file.mkdir()) {
+                Log.e("FileUtil", "directory create failed");
+                callback.onFailed();
+            }
+        }
+        return file;
+    }
+
+
+    public static boolean isExternalStoageWriable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }
