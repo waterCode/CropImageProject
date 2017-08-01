@@ -251,7 +251,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
-        if( getImageBitmap() != null) {
+        if (getImageBitmap() != null) {
             if (mCurrentActiveAnimator != null) {
                 mCurrentActiveAnimator.cancel();
             }
@@ -278,7 +278,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
                 checkImagePosition();
             }
             return true;
-        }else {
+        } else {
             return false;
         }
     }
@@ -525,7 +525,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     }
 
     public void postAnyRotate(float anyAngel) {
-        if(getImageBitmap() != null) {
+        if (getImageBitmap() != null) {
             mRotateAnimator.cancel();
             mRotateAnimator.setFloatValues(0, anyAngel);
             mRotateAnimator.setDuration(DEFAULT_ANIMATION_TIME);
@@ -610,6 +610,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     @Override
     protected void onDraw(Canvas canvas) {
+        long start = System.currentTimeMillis();
         Log.d(TAG, mDisplayMatrix.toString());
         super.onDraw(canvas);
         drawTransParentLayer(canvas);
@@ -621,6 +622,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
                 setImageInfo();
             }
         }
+        Log.d("onDrawTime",""+(System.currentTimeMillis() - start));
     }
 
     private void setImageInfo() {
@@ -648,15 +650,16 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
 
     @Override
     public void setImageURI(@Nullable Uri uri) {
-        if(uri != null) {
+        if (uri != null) {
             mUri = uri;
-            try {
+            super.setImageURI(uri);
+            /*try {
                 Bitmap bmp = ImageLoadUtil.loadImage(getContext().getContentResolver(), uri, 1500, 1500);
                 Bitmap rotatedBitmap = ImageLoadUtil.checkBitmapOrientation(getContext().getContentResolver(), uri, bmp);//检查图片方向
                 setImageBitmap(rotatedBitmap);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
-            }
+            }*/
         }
     }
 
@@ -704,9 +707,9 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
      */
     public Bitmap getImageBitmap() {
         BitmapDrawable bitmapDrawable = (BitmapDrawable) getDrawable();
-        if(bitmapDrawable != null) {
+        if (bitmapDrawable != null) {
             return bitmapDrawable.getBitmap();
-        }else {
+        } else {
             return null;
         }
 
@@ -861,6 +864,9 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
         @Override
         public boolean onRotation(RotationGestureDetector rotationDetector) {
             float angle = rotationDetector.getAngle();
+            if(isHorizontalEnable){
+                angle = -angle;
+            }
             postRotate(angle, mMidPntX, mMidPntY);
             return true;
         }
