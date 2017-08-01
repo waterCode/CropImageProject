@@ -652,14 +652,14 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
     public void setImageURI(@Nullable Uri uri) {
         if (uri != null) {
             mUri = uri;
-            super.setImageURI(uri);
-            /*try {
+            //super.setImageURI(uri);
+            try {
                 Bitmap bmp = ImageLoadUtil.loadImage(getContext().getContentResolver(), uri, 1500, 1500);
                 Bitmap rotatedBitmap = ImageLoadUtil.checkBitmapOrientation(getContext().getContentResolver(), uri, bmp);//检查图片方向
                 setImageBitmap(rotatedBitmap);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
-            }*/
+            }
         }
     }
 
