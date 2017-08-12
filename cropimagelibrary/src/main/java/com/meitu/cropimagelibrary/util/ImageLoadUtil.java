@@ -4,6 +4,7 @@ import android.content.ContentResolver;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.util.Log;
@@ -127,6 +128,17 @@ public class ImageLoadUtil {
         }
     }
 
+    private static Rect CalculateBitmapSize(ContentResolver contentResolver, Uri uri) throws IOException{
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        InputStream in = contentResolver.openInputStream(uri);
+        if(in !=null){
+            BitmapFactory.decodeStream(in,null,options);
+        }
+        Rect rect = new Rect();
+        rect.set(0,0,options.outWidth,options.outHeight);
+        return rect;
+    }
 
     private static BitmapFactory.Options calculateInSampleSize(ContentResolver contentResolver, Uri uri, int maxHeight, int maxWidth) throws IOException {
         // TODO: 2017/7/28 应该怎么对参数进行限制？，所有参数都得判断 ？

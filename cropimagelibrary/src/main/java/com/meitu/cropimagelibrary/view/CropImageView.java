@@ -840,6 +840,7 @@ public class CropImageView extends android.support.v7.widget.AppCompatImageView 
             mScaleFactor = checkScale(mScaleFactor);
             Log.d(TAG, "最终手势放大的放大倍数postScale为" + mScaleFactor);
             postScale(mScaleFactor, detector.getFocusX(), detector.getFocusY());
+            Log.d(TAG,"放大focusX"+detector.getFocusX()+"放大focusY"+detector.getFocusY());
             mImageInfo.setGestureScale(mImageInfo.getGestureScale() * mScaleFactor);//设置当前放大倍数
             return true;
         }
