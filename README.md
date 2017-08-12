@@ -1,3 +1,6 @@
+动态图：
+![image](https://github.com/waterCode/CropImageProject/blob/master/app/src/main/assets/ezgif.com-video-to-gif.gif)
+
 用法：
 ```xml
 <com.meitu.cropimagelibrary.view.CropImageView
