@@ -1,3 +1,7 @@
+GitHub同步
+https://github.com/waterCode
+
+
 动态图：
 ![image](https://github.com/waterCode/CropImageProject/blob/master/app/src/main/assets/ezgif.com-video-to-gif.gif)
 
