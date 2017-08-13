@@ -19,4 +19,39 @@ https://github.com/waterCode
         uri = getIntent().getParcelableExtra("uri");
         mNeedCropView.setImageURI(uri);
 ```
-用法大概和ImageView相同，不过要保存图片要申请权限，，6.0以上要动态申请
+用法大概和ImageView相同，不过要保存图片要申请权限，，6.0以上要动态申请,直接设置uri，我这里的uri是从图库里面选着返回的
+
+其他public方法,
+```java
+        /**
+         * 设置最小放大倍数
+         *
+         * @param MIN_SCALE 最小放大倍数
+         */
+        setMinScale(float MIN_SCALE)
+        /**
+         * 设置最小放大倍数
+         *
+         * @param MAX_SCALE 最大放大倍数
+         */
+        setMaxScale(float MAX_SCALE);
+    
+    
+        /**
+         * 放大设置开关
+         *
+         * @param mScaleEnable 是否开启
+         */
+        setScaleEnable(boolean mScaleEnable);
+    
+        /**
+         * 旋转开关
+         *
+         * @param mRotateEnable 是否开启
+         */
+        setRotateEnable(boolean mRotateEnable);//设置是否开启旋转
+           
+        setHorizontalMirror();//设置是否开启水平镜像
+        setVerticalMirror();//设置垂直镜像
+        postAnyRotate(float anyAngel);//旋转图片任意角度， 
+```
