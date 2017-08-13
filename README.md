@@ -1,6 +1,9 @@
+
+
 GitHub同步
 https://github.com/waterCode
 
+博客地址：http://blog.csdn.net/sinat_28676875/article/details/60322063
 
 动态图：
 ![image](https://github.com/waterCode/CropImageProject/blob/master/app/src/main/assets/ezgif.com-video-to-gif.gif)
