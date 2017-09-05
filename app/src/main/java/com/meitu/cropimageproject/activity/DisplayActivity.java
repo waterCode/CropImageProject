@@ -59,6 +59,7 @@ public class DisplayActivity extends AppCompatActivity {
                 break;
             case R.id.crop_Image_bt:
 
+
                 Bitmap bitmap = mNeedCropView.cropAndSaveImage();
                 SaveFileTask saveFileTask = new SaveFileTask();
                 saveFileTask.execute(bitmap);
