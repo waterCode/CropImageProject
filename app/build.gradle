@@ -1,20 +1,13 @@
 apply plugin: 'com.android.application'
-//findbugs静态分析工具
-apply plugin: 'com.meitu.quality.findbugs'
-//pmd静态分析工具
-apply plugin: 'com.meitu.quality.pmd'
-//errorprone编译期分析工具
-apply plugin: 'com.meitu.quality.errorprone'
-//Android Lint配置插件
-apply plugin: 'com.meitu.quality.lint'
+
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "26.0.0"
+    compileSdkVersion 24
+    buildToolsVersion "26.0.1"
     defaultConfig {
         applicationId "com.meitu.cropimageproject"
         minSdkVersion 15
-        targetSdkVersion 25
+        targetSdkVersion 24
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -28,9 +21,7 @@ android {
 }
 
 
-easyQuality {
-    abortOnError false
-}
+
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
