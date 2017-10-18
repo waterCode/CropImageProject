@@ -7,12 +7,17 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.os.MessageQueue;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 
 import com.meitu.cropimagelibrary.util.FileUtil;
 import com.meitu.cropimagelibrary.util.SaveBitmapCallback;
@@ -30,6 +35,25 @@ public class DisplayActivity extends AppCompatActivity {
     private String TAG = "DisplayActivity";
     private Uri uri;//怎么部分重构？
     private CropImageView mNeedCropView;
+    private Looper looper;
+
+
+    private static class MyHandler extends Handler{
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            //处理消息，
+        }
+    }
+
+    private static class MyHanderCallback implements Handler.Callback{
+
+        @Override
+        public boolean handleMessage(Message msg) {
+            return false;
+        }
+    }
+    private Handler myHandler = new Handler(new MyHanderCallback());
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
