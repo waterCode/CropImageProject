@@ -74,16 +74,16 @@ public class ImageLoadUtil {
         InputStream inputStream;
         try {
             inputStream = contentResolver.openInputStream(uri);
-            if (inputStream != null) {
+            /*if (inputStream != null) {
                 android.support.media.ExifInterface exif = new android.support.media.ExifInterface(inputStream);
                 int exifOrientation = exif.getAttributeInt(android.support.media.ExifInterface.TAG_DATETIME_ORIGINAL, ExifInterface.ORIENTATION_NORMAL);
                 return exifToDegrees(exifOrientation);//返回旋转度数
-            }
+            }*/
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-        } catch (IOException e) {
+        } /*catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
         return 0;//
     }
 

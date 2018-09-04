@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://Y:\githubProject\CropImageProject-master\CropImageProject.iml" filepath="Y:\githubProject\CropImageProject-master\CropImageProject.iml" />
-      <module fileurl="file://$PROJECT_DIR$/CropImageProject-master.iml" filepath="$PROJECT_DIR$/CropImageProject-master.iml" />
+      <module fileurl="file://$PROJECT_DIR$/CropImageProject.iml" filepath="$PROJECT_DIR$/CropImageProject.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/cropimagelibrary/cropimagelibrary.iml" filepath="$PROJECT_DIR$/cropimagelibrary/cropimagelibrary.iml" />
     </modules>
