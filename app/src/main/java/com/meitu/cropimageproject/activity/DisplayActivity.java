@@ -121,7 +121,7 @@ public class DisplayActivity extends AppCompatActivity {
             File parent = getDefaultDir();
             if(params[0] ==null)
                 return null;
-            return FileUtil.bitmapConvertToFile(DisplayActivity.this, params[0], parent, new SaveBitmapCallback() {
+            return FileUtil.INSTANCE.bitmapConvertToFile(DisplayActivity.this, params[0], parent, new SaveBitmapCallback() {
 
                 @Override
                 public void onFailed() {
